@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import os
 import numpy as np
 import random
+import pickle
 import cv2
 import cameratransform as ct
 from tqdm import tqdm
@@ -76,64 +77,62 @@ def feet_head_position(boxes, class_ids, frame_height):
 
     return position_feet, position_head
 
+def yolo_collection(yolo_folder, image_folder):
+	"""Run YOLOv3 algorithm to collect people feet & heads position"""
+	# Load model
+	print("[INFO] loading YOLO from disk")
+	net = cv2.dnn.readNetFromDarknet(yolo_folder + 'yolov3.cfg', yolo_folder + 'yolov3.weights')
+	net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
+	net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
+	ln = net.getLayerNames()
+	ln = [ln[i[0] - 1] for i in net.getUnconnectedOutLayers()]
 
-# ========== YOLO SETUP ==========
+	# Parameters setup
+	conf_threshold = 0.4															# Confidence minimum threshold
+	nms_threshold = 0.7																# Non-maximum suppression threshold : overlap maximum threshold
 
-path_folder = 'D:/code#/[large_data]/covid_project/yolo_coco/'
+	feet_selected = []
+	heads_selected = []
 
-# Labels & color setup
-labels = open(path_folder + 'coco.names').read().strip().split("\n")
-colors = np.random.randint(0, 255, size=(len(labels), 3), dtype="uint8")
+	print('Collecting 100 positions: ', end='')
 
-# Load model
-print("[INFO] loading YOLO from disk")
-net = cv2.dnn.readNetFromDarknet(path_folder + 'yolov3.cfg', path_folder + 'yolov3.weights')
-net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
-net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
-ln = net.getLayerNames()
-ln = [ln[i[0] - 1] for i in net.getUnconnectedOutLayers()]
+	for i in range(200):
+		# Load a frame
+		frame = plt.imread(image_folder + os.listdir(image_folder)[i])
 
-# Parameters setup
-conf_threshold = 0.4	# Confidence minimum threshold
-nms_threshold = 0.4		# Non-maximum suppression threshold : overlap maximum threshold
+		# Transform frame in 416x416 blob + forward pass
+		blob = cv2.dnn.blobFromImage(frame, 1/255, (416, 416), swapRB=True, crop=False)
+		net.setInput(blob)
+		outputs = net.forward(ln)
+
+		# Post-processing
+		(frame_height, frame_width) = frame.shape[:2]
+		boxes, confidences, class_ids = process_outputs(outputs, frame_width, frame_height, conf_threshold, nms_threshold)
+
+		# Get feet & heads position
+		feet_new, heads_new = feet_head_position(boxes, class_ids, frame_height)
+		feet_selected.extend(feet_new)
+		heads_selected.extend(heads_new)
+
+		print('■', end='')
+
+		# Stop calibration after 100 positions collected
+		if len(feet_selected) > 100:
+			break
+
+	print('\n[INFO] collection finished')
+
+	return np.asarray(feet_selected), np.asarray(heads_selected)
+
 
 # ========== RUN ==========
 
-path_folder = 'D:/code#/[large_data]/covid_project/' + 'recording/'
+project_path = 'D:/code#/[large_data]/covid_project/'
 
-feet = []
-heads = []
+yolo_folder = project_path + 'yolo_coco/'
+image_folder = project_path + 'dataset_hranice_day1/'
 
-print('Collecting 100 positions: ', end='')
-
-for i in range(100):
-	frame = plt.imread(path_folder + random.choice(os.listdir(path_folder)))
-	# frame = plt.imread(path_folder + 'hranice_1589801140_244.jpg')
-
-	(frame_height, frame_width) = frame.shape[:2]
-
-	# Transform frame in 416x416 blob + forward pass
-	blob = cv2.dnn.blobFromImage(frame, 1/255, (416, 416), swapRB=True, crop=False)
-	net.setInput(blob)
-	outputs = net.forward(ln)
-
-	# Post-processing
-	boxes, confidences, class_ids = process_outputs(outputs, frame_width, frame_height, conf_threshold, nms_threshold)
-
-	feet_new, heads_new = feet_head_position(boxes, class_ids, frame_height)
-	feet.extend(feet_new)
-	heads.extend(heads_new)
-
-	print('■', end='')
-
-	# Stop calibration after 100 samples positions
-	if len(feet) > 100:
-		break
-
-print('\n[INFO] calibration finished')
-
-# Transform list --> matrix
-feet, heads = np.asarray(feet), np.asarray(heads)
+frame = plt.imread(image_folder + os.listdir(image_folder)[0])
 
 # Intrinsic camera parameters
 focal = 6.2                                                                         # in mm
@@ -143,10 +142,13 @@ frame_size = (frame.shape[1], frame.shape[0])                                   
 # Initialize the camera
 camera = ct.Camera(ct.RectilinearProjection(focallength_mm=focal,
                                             sensor=sensor_size,
-                                            image=frame))
+                                            image=frame_size))
 
-camera.addObjectHeightInformation(feet, heads, 1.7, 0.3)
+# Calibrate using people detection
+feet, heads = yolo_collection(yolo_folder, image_folder)
+camera.addObjectHeightInformation(feet, heads, 1.7, 0.3)							# Person average height in meter + std information
 
+# Fitting camera parameters
 trace = camera.metropolis([
 		# ct.FitParameter("heading_deg", lower=-180, upper=180, value=0),
         # ct.FitParameter("roll_deg", lower=-180, upper=180, value=0),
@@ -154,23 +156,20 @@ trace = camera.metropolis([
         ct.FitParameter("tilt_deg", lower=0, upper=180, value=45)
         ], iterations=1e4)
 
-plt.figure(1)
+with open(project_path + 'camera_params.pickle', 'wb') as file:
+    pickle.dump(a, file)
+
 camera.plotTrace()
 plt.tight_layout()
+plt.show()
 
-plt.figure(2)
+plt.figure('Calibration information', figsize=(20,10))
+plt.subplot(1,2,1)
 camera.plotFitInformation(frame)
 plt.legend()
 
-plt.figure(3, figsize=(20,20))
+plt.subplot(1,2,2)
 camera.getTopViewOfImage(frame, [-20, 20, 0, 75], do_plot=True)
 plt.xlabel("x position in m")
 plt.ylabel("y position in m")
 plt.show()
-
-
-frame = draw_predictions(frame, boxes, confidences, class_ids, labels, colors)
-
-# Display the frame
-cv2.imshow('frame', cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-cv2.waitKey()

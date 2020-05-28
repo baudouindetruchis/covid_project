@@ -24,4 +24,4 @@ def record_video(video_url, path_folder, location_name='none', frames=10):
 path_folder = 'D:/code#/[large_data]/covid_project/' + 'recording/'
 video_url = 'http://85.71.106.87:60001/oneshotimage1?1589800293'
 
-record_video(video_url, path_folder, 'hranice', 1000)
+record_video(video_url, path_folder, 'hranice', 100000)
