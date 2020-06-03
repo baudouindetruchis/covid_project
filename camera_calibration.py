@@ -46,7 +46,6 @@ def process_outputs(outputs, frame_width, frame_height, conf_threshold, nms_thre
 
 	return boxes, confidences, class_ids
 
-
 def draw_predictions(frame, boxes, confidences, class_ids, labels, colors):
 	"""Take boxes in pixels with upper-left corner as reference --> draw bounding boxes on frame"""
 	for i in range(len(boxes)):
@@ -156,14 +155,15 @@ trace = camera.metropolis([
         ct.FitParameter("tilt_deg", lower=0, upper=180, value=45)
         ], iterations=1e4)
 
-with open(project_path + 'camera_params.pickle', 'wb') as file:
-    pickle.dump(a, file)
+# Save camera parameters
+camera.save(project_path + 'camera_params.json')
 
+# Display calibration information
 camera.plotTrace()
 plt.tight_layout()
 plt.show()
 
-plt.figure('Calibration information', figsize=(20,10))
+plt.figure('Calibration information', figsize=(15,10))
 plt.subplot(1,2,1)
 camera.plotFitInformation(frame)
 plt.legend()
