@@ -1,7 +1,7 @@
 # covid_project
 Pipeline which outputs statistics to estimate risks of covid spreading within the camera field of view
 
-# files directory tree
+## files directory tree
 ```bash
 |-- video_scraping
 |   |-- serbia
@@ -14,29 +14,21 @@ Pipeline which outputs statistics to estimate risks of covid spreading within th
 |   |   |-- himmelried_1592484664942.jpg
 |   |   |-- ...
 |
-|   `-- 3 -> /proc/15589/fd
-|-- fdinfo
-|-- net
-|   |-- dev_snmp6
-|   |-- netfilter
-|   |-- rpc
-|   |   |-- auth.rpcsec.context
-|   |   |-- auth.rpcsec.init
-|   |   |-- auth.unix.gid
-|   |   |-- auth.unix.ip
-|   |   |-- nfs4.idtoname
-|   |   |-- nfs4.nametoid
-|   |   |-- nfsd.export
-|   |   `-- nfsd.fh
-|   `-- stat
-|-- root -> /
-`-- task
-    `-- 15589
-        |-- attr
-        |-- cwd -> /proc
-        |-- fd
-        | `-- 3 -> /proc/15589/task/15589/fd
-        |-- fdinfo
-        `-- root -> /
-
+|-- camera_params
+|   |-- serbia_camera_params.json
+|   |-- himmelried_camera_params.json
+|
+|-- models
+|   |-- yolo_coco
+|   |   |-- coco.names
+|   |   |-- yolov3.cfg
+|   |   |-- yolov3.weights
+|
+|   |-- overweight
+|   |   |-- overweight_detection_model.pickle
+|
+|   |-- age
+|   |   |-- vgg_face_weights.h5
+|   |   |-- classification_age_model_v2.hdf5
+|   |   |-- age_model_weights.h5
 ```
