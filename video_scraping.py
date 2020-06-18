@@ -28,11 +28,11 @@ def scrap_video(video_url, path_folder, location_name='none', frames=100, displa
         filename = location_name + '_' + timestamp +'.jpg'
 
         # Optimize (85% = size/3 : 120kb --> 40kb) + save
-        cv2.imwrite(path_folder + filename, frame, [int(cv2.IMWRITE_JPEG_QUALITY), 85])
+        cv2.imwrite(path_folder + location_name + '/' + filename, frame, [int(cv2.IMWRITE_JPEG_QUALITY), 85])
 
 # ========== RUN ==========
 
-path_folder = 'D:/code#/[large_data]/covid_project/' + 'scraping/'
+path_folder = 'D:/code#/[large_data]/covid_project/' + 'video_scraping/'
 video_url = 'http://93.87.72.254:8090/mjpg/video.mjpg'
 
 scrap_video(video_url, path_folder, 'serbia', 2000, True)
