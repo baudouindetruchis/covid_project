@@ -2,6 +2,7 @@
 Pipeline which outputs statistics to estimate risks of covid spreading within the camera field of view
 
 # Directory tree
+"""bash
 |-- attr
 |-- cwd -> /proc
 |-- fd
@@ -29,3 +30,5 @@ Pipeline which outputs statistics to estimate risks of covid spreading within th
         | `-- 3 -> /proc/15589/task/15589/fd
         |-- fdinfo
         `-- root -> /
+
+"""
