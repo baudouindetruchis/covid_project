@@ -1,11 +1,19 @@
 # covid_project
 Pipeline which outputs statistics to estimate risks of covid spreading within the camera field of view
 
-# Directory tree
+# files directory tree
 ```bash
-|-- attr
-|-- cwd -> /proc
-|-- fd
+|-- video_scraping
+|   |-- serbia
+|   |   |-- serbia_1592484664941.jpg
+|   |   |-- serbia_1592484664942.jpg
+|   |   |-- ...
+|   |
+|   |-- himmelried
+|   |   |-- himmelried_1592484664941.jpg
+|   |   |-- himmelried_1592484664942.jpg
+|   |   |-- ...
+|
 |   `-- 3 -> /proc/15589/fd
 |-- fdinfo
 |-- net
