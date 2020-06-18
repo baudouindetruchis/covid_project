@@ -78,7 +78,7 @@ def position_3d(boxes, class_ids, frame_height):
 project_path = 'D:/code#/[large_data]/covid_project/'
 
 yolo_folder = project_path + 'yolo_coco/'
-image_folder = project_path + 'dataset_hranice_day1/'
+image_folder = project_path + 'dataset_serbia_day1/'
 
 camera = ct.Camera(ct.RectilinearProjection())
 camera.load(project_path + 'camera_params.json')
@@ -123,8 +123,8 @@ for i in range(50):
     cv2.imshow('frame', cv2.cvtColor(cv2.resize(frame, (640, 360)), cv2.COLOR_BGR2RGB))
     # cv2.waitKey()
 
-    plt.xlim(-20,20)
-    plt.ylim(0,50)
+    plt.xlim(-5,5)
+    plt.ylim(0,10)
     plt.scatter(topview_coor[:, 0], topview_coor[:, 1])
     plt.xlabel("x position in m")
     plt.ylabel("y position in m")

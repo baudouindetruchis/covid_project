@@ -97,7 +97,7 @@ def yolo_collection(yolo_folder, image_folder):
 
 	for i in range(200):
 		# Load a frame
-		frame = plt.imread(image_folder + os.listdir(image_folder)[i])
+		frame = plt.imread(image_folder + random.choice(os.listdir(image_folder)))
 
 		# Transform frame in 416x416 blob + forward pass
 		blob = cv2.dnn.blobFromImage(frame, 1/255, (416, 416), swapRB=True, crop=False)
@@ -129,7 +129,7 @@ def yolo_collection(yolo_folder, image_folder):
 project_path = 'D:/code#/[large_data]/covid_project/'
 
 yolo_folder = project_path + 'yolo_coco/'
-image_folder = project_path + 'dataset_hranice_day1/'
+image_folder = project_path + 'dataset_serbia_day1/'
 
 frame = plt.imread(image_folder + os.listdir(image_folder)[0])
 
@@ -169,7 +169,7 @@ camera.plotFitInformation(frame)
 plt.legend()
 
 plt.subplot(1,2,2)
-camera.getTopViewOfImage(frame, [-20, 20, 0, 75], do_plot=True)
+camera.getTopViewOfImage(frame, [-10, 10, 0, 20], do_plot=True)
 plt.xlabel("x position in m")
 plt.ylabel("y position in m")
 plt.show()
