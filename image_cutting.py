@@ -24,12 +24,12 @@ def cutting(name,frame, boxes, labels,class_ids):
             (x, y) = (boxes[i][0], boxes[i][1])
             (w, h) = (boxes[i][2], boxes[i][3])
             crop_img = frame[y:y+h, x:x+w]
-            
+
             if crop_img.size != 0:
                 crop_img = cv2.cvtColor(crop_img, cv2.COLOR_BGR2RGB)
                 cv2.imwrite('C:/Users/edinh/Desktop/ML/covid_project-master/data/' + name + '_cut_' + str(cpt) + '.png', crop_img)
-            
-            
+
+
 def cutting_head(frame, boxes, labels,class_ids):
     cpt = 0
     #person
@@ -40,11 +40,11 @@ def cutting_head(frame, boxes, labels,class_ids):
             (x, y) = (boxes[i][0], boxes[i][1])
             (w, h) = (boxes[i][2], boxes[i][3])
             crop_img = frame[y:y+int(h/3), x:x+w]
-            
+
             if crop_img.size != 0:
                 crop_img = cv2.cvtColor(crop_img, cv2.COLOR_BGR2RGB)
                 cv2.imwrite('C:/Users/edinh/Desktop/ML/covid_project-master/data/' + name + '_head_cut_' + str(cpt) + '.png', crop_img)
-            
+
 # ========== YOLO SETUP ==========
 
 path_folder = 'C:/Users/edinh/Desktop/ML/covid_project-master/'
@@ -67,25 +67,22 @@ nms_threshold = 0.4		# Non-maximum suppression threshold : overlap maximum thres
 
 # ========== RUN ==========
 
-path_folder = 'C:/Users/edinh/Desktop/ML/covid_project-master/images'
+if __name__ == "__main__":
+    path_folder = 'C:/Users/edinh/Desktop/ML/covid_project-master/images'
 
-for element in os.listdir(path_folder):
+    for element in os.listdir(path_folder):
 
-    
-    
-    name = element.rsplit(".",1)[0]
-    frame = plt.imread(path_folder + '/' + element)
-    # frame = plt.imread(path_folder + 'hranice_1589801140_244.jpg')
-    
-    (frame_height, frame_width) = frame.shape[:2]
-    
-    # Transform frame in 416x416 blob + forward pass
-    blob = cv2.dnn.blobFromImage(frame, 1/255, (416, 416), swapRB=True, crop=False)
-    net.setInput(blob)
-    outputs = net.forward(ln)
-    
-    # Post-processing
-    boxes, confidences, class_ids = process_outputs(outputs, frame_width, frame_height, conf_threshold, nms_threshold)
-    cutting(name, frame, boxes, labels, class_ids)
+        name = element.rsplit(".",1)[0]
+        frame = plt.imread(path_folder + '/' + element)
+        # frame = plt.imread(path_folder + 'hranice_1589801140_244.jpg')
 
-print('fini')                                                       # in mm
+        (frame_height, frame_width) = frame.shape[:2]
+
+        # Transform frame in 416x416 blob + forward pass
+        blob = cv2.dnn.blobFromImage(frame, 1/255, (416, 416), swapRB=True, crop=False)
+        net.setInput(blob)
+        outputs = net.forward(ln)
+
+        # Post-processing
+        boxes, confidences, class_ids = process_outputs(outputs, frame_width, frame_height, conf_threshold, nms_threshold)
+        cutting(name, frame, boxes, labels, class_ids)
