@@ -11,9 +11,7 @@ from keras import preprocessing
 import keras
 import pickle
 import numpy as np
-
-with open("overweight_detection_model.pickle", "rb") as file:
-  model = pickle.load(file)
+from matplotlib import pyplot as plt
 
 def predict_list(img_list, model):
   pred_list = []
@@ -23,8 +21,7 @@ def predict_list(img_list, model):
     img = preprocessing.image.load_img(path, target_size=(300, 150))
     images[i] = preprocessing.image.img_to_array(img)/255
     i+=1
-  print(images.shape)
-  
+
   for i in range(len(img_list)):
     image = np.expand_dims(images[i], axis=0)
     pred = model.predict(image)
@@ -35,5 +32,9 @@ def predict_list(img_list, model):
 
   return(pred_list)
 
-liste = ["/content/1.jpg","/content/1347207.jpg", "/content/2.jpg", "/content/3.jpg", "/content/4.jpg", "/content/5.jpg", "/content/01.jpg", "/content/02.jpg", "/content/03.jpg" ]
-print(predict_list(liste, model))
+if __name__ == "__main__":
+    with open("overweight_detection_model.pickle", "rb") as file:
+      model = pickle.load(file)
+
+    liste = ["/content/1.jpg","/content/1347207.jpg", "/content/2.jpg", "/content/3.jpg", "/content/4.jpg", "/content/5.jpg", "/content/01.jpg", "/content/02.jpg", "/content/03.jpg" ]
+    print(predict_list(liste, model))

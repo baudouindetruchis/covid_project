@@ -8,7 +8,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 
-def scrap_video(video_url, path_folder, location_name='none', frames=100, display=False):
+def scrap_video(video_url, video_folder, location_name='none', frames=100, display=False):
     """Scraping from a video link"""
     cap = cv2.VideoCapture(video_url)
     for i in tqdm(range(frames), desc='Recording'):

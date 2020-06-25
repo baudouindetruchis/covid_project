@@ -8,7 +8,9 @@ import cameratransform as ct
 from tqdm import tqdm
 
 import yolo_detection
-# import image_cutting
+import image_cutting
+import people_distances
+import final_overweight_detection
 
 
 # ========== PATHS ==========
@@ -18,6 +20,7 @@ location = 'serbia'
 
 yolo_folder = project_path + 'models/yolo_coco/'
 image_folder = project_path + 'video_scraping/' + location + '/'
+
 
 # ========== YOLO SETUP ==========
 
@@ -40,10 +43,12 @@ nms_threshold = 0.1		# Non-maximum suppression threshold : overlap maximum thres
 
 # ========== RUNING ==========
 
+init = 1
 
 while True:
     # Get the last frame
-    frame = plt.imread(image_folder + sorted(os.listdir(image_folder))[-1])
+    # frame = plt.imread(image_folder + sorted(os.listdir(image_folder))[-1])
+    frame = plt.imread(image_folder + 'serbia_1592484700624.jpg')
 
     # Transform frame in 416x416 blob + forward pass
     blob = cv2.dnn.blobFromImage(frame, 1/255, (416, 416), swapRB=True, crop=False)
@@ -61,12 +66,42 @@ while True:
     # cv2.imshow('frame', cv2.cvtColor(cv2.resize(yolo_frame, (frame_width, frame_height)), cv2.COLOR_BGR2RGB))
     # cv2.waitKey(1)
 
+    # If no detection no prediction
+    if not boxes:
+        continue
+
     # ========== CUTTING ==========
 
+    image_cut_list = image_cutting.cut_tolist(frame, boxes, class_ids)
+
     # ========== OVERWEIGHT ==========
+    if init:
+        print("[INFO] loading overweight model from disk")
+        with open(project_path + 'models/overweight/' + 'overweight_detection_model.pickle', 'rb') as file:
+            overweight_model = pickle.load(file)
+
+    # Save in temp folder
+    for count, image in enumerate(image_cut_list):
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        cv2.imwrite(project_path + 'temp/' +'cut_' + str(count) + '.jpg', image, [cv2.IMWRITE_JPEG_QUALITY, 90])
+    image_path_list = os.listdir(project_path + 'temp/')
+    image_path_list = [project_path + 'temp/' + filename for filename in image_path_list]
+    print(image_path_list)
+
+    # Predict
+    overweight_prediction = final_overweight_detection.predict_list(image_path_list,overweight_model)
+    print(overweight_prediction)
 
     # ========== MASK ==========
 
     # ========== AGE ==========
 
     # ========== DISTANCES ==========
+
+    minimum_dist = people_distances.position_3d(project_path, location, boxes, class_ids, frame_height, display=False)
+    print('minimum distance =', minimum_dist)
+
+    # ========== SAVE ==========
+
+    # First loop finished
+    init = 0

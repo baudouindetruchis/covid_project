@@ -82,7 +82,7 @@ def feet_head_position(boxes, class_ids, frame_height):
 def yolo_collection(yolo_folder, image_folder):
 	"""Run YOLOv3 algorithm to collect people feet & heads position"""
 	# Load model
-	print("[INFO] loading YOLO from disk")
+	# print("[INFO] loading YOLO from disk")
 	net = cv2.dnn.readNetFromDarknet(yolo_folder + 'yolov3.cfg', yolo_folder + 'yolov3.weights')
 	net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
 	net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
@@ -127,7 +127,7 @@ def yolo_collection(yolo_folder, image_folder):
 	return np.asarray(feet_selected), np.asarray(heads_selected)
 
 def get_camera_params(project_path, location, display=False):
-	"""Compute camera parameters using yolo inputs"""
+	"""Compute camera parameters using yolo inputs and save it"""
 	# Paths
 	yolo_folder = project_path + 'models/yolo_coco/'
 	image_folder = project_path + 'video_scraping/' + location + '/'
