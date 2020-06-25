@@ -14,21 +14,21 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 def predict_list(img_list, model):
-  pred_list = []
-  images = np.zeros((len(img_list), 300, 150, 3), dtype='float32')
-  i=0
-  for path in img_list:
-    img = preprocessing.image.load_img(path, target_size=(300, 150))
-    images[i] = preprocessing.image.img_to_array(img)/255
-    i+=1
+    pred_list = []
+    images = np.zeros((len(img_list), 300, 150, 3), dtype='float32')
+    i=0
+    for path in img_list:
+        img = preprocessing.image.load_img(path, target_size=(300, 150))
+        images[i] = preprocessing.image.img_to_array(img)/255
+        i+=1
 
-  for i in range(len(img_list)):
-    image = np.expand_dims(images[i], axis=0)
-    pred = model.predict(image)
-    if (pred[0][0] > pred[0][1]):
-      pred_list.append(1)
-    else:
-      pred_list.append(0)
+    for i in range(len(img_list)):
+        image = np.expand_dims(images[i], axis=0)
+        pred = model.predict(image)
+        if (pred[0][0] > pred[0][1]):
+            pred_list.append(1)
+        else:
+            pred_list.append(0)
 
   return(pred_list)
 
