@@ -81,15 +81,15 @@ while True:
             overweight_model = pickle.load(file)
 
     # Save in temp folder
-    for count, image in enumerate(image_cut_list):
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        cv2.imwrite(project_path + 'temp/' +'cut_' + str(count) + '.jpg', image, [cv2.IMWRITE_JPEG_QUALITY, 90])
-    image_path_list = os.listdir(project_path + 'temp/')
-    image_path_list = [project_path + 'temp/' + filename for filename in image_path_list]
-    print(image_path_list)
+    # for count, image in enumerate(image_cut_list):
+    #     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    #     cv2.imwrite(project_path + 'temp/' +'cut_' + str(count) + '.jpg', image, [cv2.IMWRITE_JPEG_QUALITY, 90])
+    # image_path_list = os.listdir(project_path + 'temp/')
+    # image_path_list = [project_path + 'temp/' + filename for filename in image_path_list]
+    # print(image_path_list)
 
     # Predict
-    overweight_prediction = final_overweight_detection.predict_list(image_path_list,overweight_model)
+    overweight_prediction = final_overweight_detection.predict_list(image_cut_list,overweight_model)
     print(overweight_prediction)
 
     # ========== MASK ==========

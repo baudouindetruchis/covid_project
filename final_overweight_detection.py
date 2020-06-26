@@ -16,8 +16,9 @@ from matplotlib import pyplot as plt
 def predict_list(img_list, model):
     pred_list = []
     images = np.zeros((len(img_list), 300, 150, 3), dtype='float32')
-    i=0
-    for path in img_list:
+    for image in img_list:
+        plt.imshow(image)
+        plt.show()
         img = preprocessing.image.load_img(path, target_size=(300, 150))
         images[i] = preprocessing.image.img_to_array(img)/255
         i+=1
@@ -30,7 +31,7 @@ def predict_list(img_list, model):
         else:
             pred_list.append(0)
 
-  return(pred_list)
+    return(pred_list)
 
 if __name__ == "__main__":
     with open("overweight_detection_model.pickle", "rb") as file:
