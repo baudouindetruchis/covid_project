@@ -12,16 +12,14 @@ import keras
 import pickle
 import numpy as np
 from matplotlib import pyplot as plt
+from image_preprocessing import image_resize
 
 def predict_list(img_list, model):
     pred_list = []
     images = np.zeros((len(img_list), 300, 150, 3), dtype='float32')
-    for image in img_list:
-        plt.imshow(image)
-        plt.show()
-        img = preprocessing.image.load_img(path, target_size=(300, 150))
+    for i, image in enumerate(img_list):
+        img = image_resize(image, target_size=(150, 300))
         images[i] = preprocessing.image.img_to_array(img)/255
-        i+=1
 
     for i in range(len(img_list)):
         image = np.expand_dims(images[i], axis=0)

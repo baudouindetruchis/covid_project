@@ -6,6 +6,7 @@ import pickle
 import cv2
 import cameratransform as ct
 from tqdm import tqdm
+from keras.models import load_model
 
 import yolo_detection
 import image_cutting
@@ -77,8 +78,7 @@ while True:
     # ========== OVERWEIGHT ==========
     if init:
         print("[INFO] loading overweight model from disk")
-        with open(project_path + 'models/overweight/' + 'overweight_detection_model.pickle', 'rb') as file:
-            overweight_model = pickle.load(file)
+        overweight_model = load_model(project_path + 'models/overweight/' + 'overweight_detection_model.h5')
 
     # Save in temp folder
     # for count, image in enumerate(image_cut_list):

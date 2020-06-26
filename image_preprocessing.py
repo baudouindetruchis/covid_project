@@ -31,6 +31,7 @@ if __name__ == "__main__":
     image_folder = project_path + 'video_scraping/' + location + '/'
 
     frame = plt.imread(image_folder + 'serbia_1592484700624.jpg')
+    print(frame)
     plt.figure()
     plt.subplot(1,2,1)
     plt.imshow(frame)
