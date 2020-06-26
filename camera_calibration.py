@@ -6,6 +6,9 @@ import pickle
 import cv2
 import cameratransform as ct
 from tqdm import tqdm
+import warnings
+
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 
 # ========== FUNCTIONS ==========
@@ -79,7 +82,7 @@ def feet_head_position(boxes, class_ids, frame_height):
 def yolo_collection(yolo_folder, image_folder):
 	"""Run YOLOv3 algorithm to collect people feet & heads position"""
 	# Load model
-	print("[INFO] loading YOLO from disk")
+	# print("[INFO] loading YOLO from disk")
 	net = cv2.dnn.readNetFromDarknet(yolo_folder + 'yolov3.cfg', yolo_folder + 'yolov3.weights')
 	net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
 	net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
@@ -95,9 +98,9 @@ def yolo_collection(yolo_folder, image_folder):
 
 	print('Collecting 100 positions: ', end='')
 
-	for i in range(200):
-		# Load a frame
-		frame = plt.imread(image_folder + random.choice(os.listdir(image_folder)))
+	for i in range(1000):
+		# Load the last frame recorded
+		frame = plt.imread(image_folder + sorted(os.listdir(image_folder))[-1])
 
 		# Transform frame in 416x416 blob + forward pass
 		blob = cv2.dnn.blobFromImage(frame, 1/255, (416, 416), swapRB=True, crop=False)
@@ -123,53 +126,61 @@ def yolo_collection(yolo_folder, image_folder):
 
 	return np.asarray(feet_selected), np.asarray(heads_selected)
 
+def get_camera_params(project_path, location, display=False):
+	"""Compute camera parameters using yolo inputs and save it"""
+	# Paths
+	yolo_folder = project_path + 'models/yolo_coco/'
+	image_folder = project_path + 'video_scraping/' + location + '/'
+
+	# Get one frame for initialization
+	frame = plt.imread(image_folder + sorted(os.listdir(image_folder))[-1])
+
+	# Intrinsic camera parameters
+	focal = 6.2                                                                         # in mm
+	sensor_size = (6.17, 4.55)                                                          # in mm
+	frame_size = (frame.shape[1], frame.shape[0])                                       # (width, height) in pixel
+
+	# Initialize the camera
+	camera = ct.Camera(ct.RectilinearProjection(focallength_mm=focal,
+	                                            sensor=sensor_size,
+	                                            image=frame_size))
+
+	# Calibrate using people detection
+	feet, heads = yolo_collection(yolo_folder, image_folder)
+	camera.addObjectHeightInformation(feet, heads, 1.7, 0.3)							# Person average height in meter + std information
+
+	# Fitting camera parameters
+	trace = camera.metropolis([
+			# ct.FitParameter("heading_deg", lower=-180, upper=180, value=0),
+	        # ct.FitParameter("roll_deg", lower=-180, upper=180, value=0),
+	        ct.FitParameter("elevation_m", lower=0, upper=100, value=5),
+	        ct.FitParameter("tilt_deg", lower=0, upper=180, value=45)
+	        ], iterations=1e4)
+
+	# Save camera parameters
+	camera.save(project_path + 'camera_params/' + location + '_camera_params.json')
+
+	if display:
+		# Display calibration information
+		camera.plotTrace()
+		plt.tight_layout()
+		plt.show()
+
+		plt.figure('Calibration information', figsize=(15,10))
+		plt.subplot(1,2,1)
+		camera.plotFitInformation(frame)
+		plt.legend()
+
+		plt.subplot(1,2,2)
+		camera.getTopViewOfImage(frame, [-10, 10, 0, 20], do_plot=True)
+		plt.xlabel("x position in m")
+		plt.ylabel("y position in m")
+		plt.show()
 
 # ========== RUN ==========
 
-project_path = 'D:/code#/[large_data]/covid_project/'
+if __name__ == "__main__":
+	project_path = 'D:/code#/[large_data]/covid_project/'
+	location = 'serbia'
 
-yolo_folder = project_path + 'yolo_coco/'
-image_folder = project_path + 'dataset_serbia_day1/'
-
-frame = plt.imread(image_folder + os.listdir(image_folder)[0])
-
-# Intrinsic camera parameters
-focal = 6.2                                                                         # in mm
-sensor_size = (6.17, 4.55)                                                          # in mm
-frame_size = (frame.shape[1], frame.shape[0])                                       # (width, height) in pixel
-
-# Initialize the camera
-camera = ct.Camera(ct.RectilinearProjection(focallength_mm=focal,
-                                            sensor=sensor_size,
-                                            image=frame_size))
-
-# Calibrate using people detection
-feet, heads = yolo_collection(yolo_folder, image_folder)
-camera.addObjectHeightInformation(feet, heads, 1.7, 0.3)							# Person average height in meter + std information
-
-# Fitting camera parameters
-trace = camera.metropolis([
-		# ct.FitParameter("heading_deg", lower=-180, upper=180, value=0),
-        # ct.FitParameter("roll_deg", lower=-180, upper=180, value=0),
-        ct.FitParameter("elevation_m", lower=0, upper=100, value=5),
-        ct.FitParameter("tilt_deg", lower=0, upper=180, value=45)
-        ], iterations=1e4)
-
-# Save camera parameters
-camera.save(project_path + 'camera_params.json')
-
-# Display calibration information
-camera.plotTrace()
-plt.tight_layout()
-plt.show()
-
-plt.figure('Calibration information', figsize=(15,10))
-plt.subplot(1,2,1)
-camera.plotFitInformation(frame)
-plt.legend()
-
-plt.subplot(1,2,2)
-camera.getTopViewOfImage(frame, [-10, 10, 0, 20], do_plot=True)
-plt.xlabel("x position in m")
-plt.ylabel("y position in m")
-plt.show()
+	get_camera_params(project_path, location, display=False)
