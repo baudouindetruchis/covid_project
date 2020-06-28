@@ -28,8 +28,8 @@ with sshtunnel.SSHTunnelForwarder(
     connection.autocommit = True
     mycursor = connection.cursor()
 
-    def insertLog(timestamp,Person_ID:int,Mask_B,Proximity_B,Gender_B,Age_I:int,Weight_I:int):
-        sql_log_command="INSERT INTO ML_Logs(Datetime,Person_ID, Mask_B, Proximity_B, Gender_B, Age_I,Weight_I) VALUES ({},{},{},{},{},{},{});".format(timestamp,Person_ID,Mask_B,Proximity_B,Gender_B,Age_I,Weight_I)
+    def insertLog(camera,timestamp,Person_ID:int,Mask_B,Proximity_B,Gender_B,Age_I:int,Weight_I:int):
+        sql_log_command="INSERT INTO ML_Logs_"+camera+"(Datetime,Person_ID, Mask_B, Proximity_B, Gender_B, Age_I,Weight_I) VALUES ({},{},{},{},{},{},{});".format(timestamp,Person_ID,Mask_B,Proximity_B,Gender_B,Age_I,Weight_I)
         mycursor.execute(sql_log_command)
 
     def random_date(start, end):
@@ -38,7 +38,7 @@ with sshtunnel.SSHTunnelForwarder(
         )
 
     current = datetime.now()
-    old = datetime.now()-timedelta(days=10)
+    old = datetime.now()-timedelta(days=30)
     randomTime = random_date(old,current)
 
     n=1000
@@ -51,7 +51,8 @@ with sshtunnel.SSHTunnelForwarder(
         randomGender = random.randint(0,1)
         randomAge = random.randint(20,100)
         randomWeight = random.randint(20,100)
-        insertLog(randomTime,randomPersonID, randomMask, randomProximity, randomGender, randomAge, randomWeight)
+        camera = "Serbia"
+        insertLog(camera,randomTime,randomPersonID, randomMask, randomProximity, randomGender, randomAge, randomWeight)
         print(str(i)+"/"+str(n))
 
     mycursor.close()
