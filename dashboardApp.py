@@ -110,7 +110,7 @@ def getCountryInfo(country,abv):
 
     dataCovid = json.loads(requests.get(json_url).text)
     dataCountry = json.loads(requests.get(json_url2).text)
-    population = str(round(dataCountry['population']/1000000,1))
+    population = dataCountry['population']
 
     if (country=="France") :
         latest_data = dataCovid[len(dataCovid)-2]
@@ -270,8 +270,11 @@ def update_output(value):
     updatedMap = worldMap(dfMap, active)
     updatedMap.update_layout(transition_duration=500)
 
+    countryop = round(infos[4]/1000000,1)
+    infected = infos[0]+" ("+str(round(int(infos[0])/infos[4],2))+"%)"
+
     return cams[int(value)]["Link"],active["Country"]+" population",\
-            infos[0]+"test",infos[4]+'M',infos[1]+' ('+infos[5]+"%)",infos[2],infos[3],updatedMap
+            infected,str(countryop)+'M',infos[1]+' ('+infos[5]+"%)",infos[2],infos[3],updatedMap
 
 # Callback for averages
 @app.callback(
