@@ -13,10 +13,24 @@ import camera_calibration
 
 # ========== FUNCTIONS ==========
 
-def minimum_distance(topview_coor):
-	# coor_2d = [[position[0], position[1]] for position in topview_coor]
-	min_dist = random.randint(0,9)
-	return min_dist
+def minimum_distances(topview_coor):
+	min_dists = []
+	topview_coor = topview_coor.tolist()
+
+	# one detection --> return standard distance : 2m
+	if len(topview_coor) == 1:
+		min_dists = [2]
+
+	# Compute min distance for every point
+	elif len(topview_coor) > 1:
+		for index, coor in enumerate(topview_coor):
+			others = topview_coor[:index] + topview_coor[index+1:]
+			min_dists.append(round(min([math.sqrt((coor[0]-other[0])**2 + (coor[1]-other[1])**2) for other in others]),1))
+
+	# Check one meter rule
+	under_1m = [1 if element < 1 else 0 for element in min_dists]
+
+	return under_1m
 
 def position_3d(project_path, location, boxes, class_ids, frame_height, display=False):
 	"""Output people topview coordinates in the real world"""
@@ -26,6 +40,10 @@ def position_3d(project_path, location, boxes, class_ids, frame_height, display=
 		if class_ids[i] == 0:
 			positions.append([box[0]+box[2]//2, box[1]+box[3]//2])
 	yolo_centers = np.asarray(positions)
+
+	# Check if any persons
+	if len(positions) == 0:
+		return []
 
 	# Load camera parameters
 	camera = ct.Camera(ct.RectilinearProjection())
@@ -46,9 +64,9 @@ def position_3d(project_path, location, boxes, class_ids, frame_height, display=
 		plt.pause(0.2)
 		plt.clf()
 
-	min_dist = minimum_distance(topview_coor)
+	min_dists = minimum_distances(topview_coor)
 
-	return min_dist
+	return min_dists
 
 # ========== RUN ==========
 
