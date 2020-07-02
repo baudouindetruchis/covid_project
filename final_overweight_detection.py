@@ -12,24 +12,19 @@ import keras
 import pickle
 import numpy as np
 from matplotlib import pyplot as plt
+from image_preprocessing import image_resize
 
 def predict_list(img_list, model):
     pred_list = []
-    images = np.zeros((len(img_list), 300, 150, 3), dtype='float32')
-    for image in img_list:
-        plt.imshow(image)
-        plt.show()
-        img = preprocessing.image.load_img(path, target_size=(300, 150))
-        images[i] = preprocessing.image.img_to_array(img)/255
-        i+=1
+    images = np.zeros((len(img_list), 100, 75, 3), dtype='float32')
+    for i, image in enumerate(img_list):
+        img = image_resize(image, target_size=(75, 100))
+        images[i] = img/255
 
     for i in range(len(img_list)):
         image = np.expand_dims(images[i], axis=0)
         pred = model.predict(image)
-        if (pred[0][0] > pred[0][1]):
-            pred_list.append(1)
-        else:
-            pred_list.append(0)
+        pred_list.append(round(pred[0][0]))
 
     return(pred_list)
 

@@ -1,5 +1,6 @@
 from PIL import Image
 import math
+import numpy as np
 from matplotlib import pyplot as plt
 
 
@@ -18,6 +19,9 @@ def image_resize(image, target_size=(100,100)):
     paste_y = math.floor((target_size[1] - new_height)/2)
     background.paste(resized, (paste_x, paste_y))
 
+    # Get RGB array
+    background = np.array(background)
+
     return background
 
 
@@ -31,9 +35,12 @@ if __name__ == "__main__":
     image_folder = project_path + 'video_scraping/' + location + '/'
 
     frame = plt.imread(image_folder + 'serbia_1592484700624.jpg')
+    # frame = plt.imread('C:/Users/bdnde/Desktop/overweight_dataset_29juin/overweight/ezcezcezc.jpg')
+    print(frame)
     plt.figure()
     plt.subplot(1,2,1)
     plt.imshow(frame)
     plt.subplot(1,2,2)
-    plt.imshow(image_resize(frame, target_size=(700,300)))
+    plt.imshow(image_resize(frame, target_size=(420,800)))
+    print(image_resize(frame, target_size=(420,800)))
     plt.show()

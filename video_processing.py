@@ -6,6 +6,7 @@ import pickle
 import cv2
 import cameratransform as ct
 from tqdm import tqdm
+from keras.models import load_model
 
 import yolo_detection
 import image_cutting
@@ -48,7 +49,7 @@ init = 1
 while True:
     # Get the last frame
     # frame = plt.imread(image_folder + sorted(os.listdir(image_folder))[-1])
-    frame = plt.imread(image_folder + 'serbia_1592484700624.jpg')
+    frame = plt.imread(image_folder + 'serbia_1593695209069.jpg')
 
     # Transform frame in 416x416 blob + forward pass
     blob = cv2.dnn.blobFromImage(frame, 1/255, (416, 416), swapRB=True, crop=False)
@@ -77,16 +78,7 @@ while True:
     # ========== OVERWEIGHT ==========
     if init:
         print("[INFO] loading overweight model from disk")
-        with open(project_path + 'models/overweight/' + 'overweight_detection_model.pickle', 'rb') as file:
-            overweight_model = pickle.load(file)
-
-    # Save in temp folder
-    # for count, image in enumerate(image_cut_list):
-    #     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    #     cv2.imwrite(project_path + 'temp/' +'cut_' + str(count) + '.jpg', image, [cv2.IMWRITE_JPEG_QUALITY, 90])
-    # image_path_list = os.listdir(project_path + 'temp/')
-    # image_path_list = [project_path + 'temp/' + filename for filename in image_path_list]
-    # print(image_path_list)
+        overweight_model = load_model(project_path + 'models/overweight/' + 'overweight_detection_model_custom.h5')
 
     # Predict
     overweight_prediction = final_overweight_detection.predict_list(image_cut_list,overweight_model)
