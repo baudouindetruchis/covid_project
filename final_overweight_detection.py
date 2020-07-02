@@ -24,7 +24,7 @@ def predict_list(img_list, model):
     for i in range(len(img_list)):
         image = np.expand_dims(images[i], axis=0)
         pred = model.predict(image)
-        pred_list.append(pred[0][0])
+        pred_list.append(round(pred[0][0]))
 
     return(pred_list)
 
