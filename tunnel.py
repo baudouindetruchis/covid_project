@@ -43,5 +43,6 @@ with sshtunnel.SSHTunnelForwarder(
     mycursor.close()
     connection.close()
 
+
 tunnel.stop()
 print("tunnel disconnected")
