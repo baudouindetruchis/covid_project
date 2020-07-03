@@ -8,6 +8,10 @@ import time
 import logging
 
 
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
 def insertLog(camera, timestamp, Population, Mask, Proximity, Gender, Age, Fitness):
     hostAddress = "Noptus.mysql.pythonanywhere-services.com"
     username = "Noptus"
@@ -33,11 +37,12 @@ def insertLog(camera, timestamp, Population, Mask, Proximity, Gender, Age, Fitne
         sql_log_command="INSERT INTO ML_Logs_Serbia2(Datetime, Population_on_screen, Mask, Proximity, Gender, Age,Fitness) VALUES ({} ,{},{},{},{},{},{});".format(timestamp,Population,Mask,Proximity,Gender,Age,Fitness)
         mycursor.execute(sql_log_command)
 
-        current = datetime.now().strftime('%Y%m%d%H')
-        insertLog("Serbia2",current,10, "NULL", 0, "NULL", "NULL",0)
-
         mycursor.close()
         connection.close()
 
     tunnel.stop()
     print("tunnel disconnected")
+
+
+current = datetime.now().strftime('%Y%m%d%H')
+insertLog("Serbia2",current,10, "NULL", 0, "NULL", "NULL",0)
