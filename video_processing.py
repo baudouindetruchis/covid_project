@@ -7,7 +7,6 @@ import cv2
 import cameratransform as ct
 from tqdm import tqdm
 from keras.models import load_model
-from apscheduler.schedulers.blocking import BlockingScheduler
 import datetime
 import time
 
@@ -15,6 +14,7 @@ import yolo_detection
 import image_cutting
 import people_distances
 import final_overweight_detection
+import tunnel
 
 
 # ========== PATHS ==========
@@ -135,6 +135,9 @@ while True:
         print('detection count =', detection_count)
         print('under 1m % =', under_1m_perc)
         print('overweight % =', overweight_perc)
+
+        current = datetime.now().strftime('%Y%m%d%H')
+        tunnel.insertLog("Serbia2", current, detection_count, "NULL", under_1m_perc, "NULL", "NULL",overweight_perc)
 
         # Reset temp memory
         detection_count = 0
