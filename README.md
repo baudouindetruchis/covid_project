@@ -3,6 +3,8 @@ Pipeline which outputs statistics to estimate risks of covid spreading within th
 
 ## packages
 
+- pip install keras
+- pip install tensorflow
 - pip install opencv-python
 - pip install cameratransform
 - pip install sshtunnel
