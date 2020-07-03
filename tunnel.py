@@ -19,7 +19,7 @@ def insertLog(camera, timestamp, Population, Mask, Proximity, Gender, Age, Fitne
     database = "Noptus$CCTV_logs"
     PA_situation = 'ssh.pythonanywhere.com'
 
-    sshtunnel.SSH_TIMEOUT = sshtunnel.TUNNEL_TIMEOUT = 5.0
+    sshtunnel.SSH_TIMEOUT = sshtunnel.TUNNEL_TIMEOUT = 500.0
 
     with sshtunnel.SSHTunnelForwarder(
         (PA_situation),
@@ -43,6 +43,6 @@ def insertLog(camera, timestamp, Population, Mask, Proximity, Gender, Age, Fitne
     tunnel.stop()
     print("tunnel disconnected")
 
-
-current = datetime.now().strftime('%Y%m%d%H')
-insertLog("Serbia2",current,10, "NULL", 0, "NULL", "NULL",0)
+if __name__ == "__main__":
+    current = datetime.now().strftime('%Y%m%d%H')
+    insertLog("Serbia2",current,10, "NULL", 0, "NULL", "NULL",0)
