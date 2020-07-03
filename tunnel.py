@@ -6,6 +6,7 @@ import pandas as pd
 import random
 import time
 import logging
+import pymysql
 
 
 logging.basicConfig()
@@ -19,7 +20,7 @@ def insertLog(camera, timestamp, Population, Mask, Proximity, Gender, Age, Fitne
     database = "Noptus$CCTV_logs"
     PA_situation = 'ssh.pythonanywhere.com'
 
-    sshtunnel.SSH_TIMEOUT = sshtunnel.TUNNEL_TIMEOUT = 500.0
+    sshtunnel.SSH_TIMEOUT = sshtunnel.TUNNEL_TIMEOUT = 3.0
 
     with sshtunnel.SSHTunnelForwarder(
         (PA_situation),
@@ -27,15 +28,15 @@ def insertLog(camera, timestamp, Population, Mask, Proximity, Gender, Age, Fitne
         remote_bind_address=(hostAddress, 3306),logger=logger
     ) as tunnel:
         print("tunnel connected at port",tunnel.local_bind_port)
-        connection = mysql.connector.connect(
+        connection = pymysql.connect(
         user=username, password=pwd,
         host='127.0.0.1', port=tunnel.local_bind_port,
         database=database)
-        connection.autocommit = True
         mycursor = connection.cursor()
 
         sql_log_command="INSERT INTO ML_Logs_Serbia2(Datetime, Population_on_screen, Mask, Proximity, Gender, Age,Fitness) VALUES ({} ,{},{},{},{},{},{});".format(timestamp,Population,Mask,Proximity,Gender,Age,Fitness)
         mycursor.execute(sql_log_command)
+        connection.commit()
 
         mycursor.close()
         connection.close()
@@ -44,5 +45,5 @@ def insertLog(camera, timestamp, Population, Mask, Proximity, Gender, Age, Fitne
     print("tunnel disconnected")
 
 if __name__ == "__main__":
-    current = datetime.now().strftime('%Y%m%d%H')
-    insertLog("Serbia2",current,10, "NULL", 0, "NULL", "NULL",0)
+    current = datetime.now().strftime('%Y%m%d%H%m%S')
+    insertLog("Serbia2",current,123456789, "NULL", 0, "NULL", "NULL",0)
