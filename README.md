@@ -6,7 +6,7 @@ Pipeline which outputs statistics to estimate risks of covid spreading within th
 - pip install opencv-python
 - pip install cameratransform
 - pip install sshtunnel
-- pip install mysql-connector-python
+- pip install PyMySQL
 
 ## files directory tree
 ```bash
