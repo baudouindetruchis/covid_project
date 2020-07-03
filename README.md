@@ -3,6 +3,7 @@ Pipeline which outputs statistics to estimate risks of covid spreading within th
 
 ## packages
 
+pip install opencv-python
 pip install cameratransform
 
 ## files directory tree
