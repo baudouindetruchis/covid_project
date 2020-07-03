@@ -5,6 +5,7 @@ Pipeline which outputs statistics to estimate risks of covid spreading within th
 
 pip install opencv-python
 pip install cameratransform
+pip install mysql-connector-python
 
 ## files directory tree
 ```bash
