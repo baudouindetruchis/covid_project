@@ -41,8 +41,8 @@ ln = net.getLayerNames()
 ln = [ln[i[0] - 1] for i in net.getUnconnectedOutLayers()]
 
 # Parameters setup
-conf_threshold = 0.25	# Confidence minimum threshold
-nms_threshold = 0.1		# Non-maximum suppression threshold : overlap maximum threshold
+conf_threshold = 0.3	# Confidence minimum threshold
+nms_threshold = 0.4		# Non-maximum suppression threshold : overlap maximum threshold
 
 
 # ========== RUNING ==========
@@ -101,7 +101,11 @@ while True:
 
     # ========== MASK ==========
 
+    mask_compliance = 'NULL'
+
     # ========== AGE ==========
+
+    avg_age = 'NULL'
 
     # ========== DISTANCES ==========
 
@@ -116,7 +120,9 @@ while True:
 
     # ========== SAVE ==========
 
-    print('count =', str(detection_count).ljust(5), '| under 1m % =', str(under_1m_perc).ljust(5), '| overweight % =', str(overweight_perc).ljust(5), end='\r')
+    print('count =', str(detection_count).ljust(5),
+    '| under 1m % =', str(under_1m_perc).ljust(5),
+    '| overweight % =', str(overweight_perc).ljust(5), end='\r')
 
     # First loop finished
     init = 0
@@ -125,15 +131,16 @@ while True:
     now = datetime.datetime.now()
     if now.minute == 0:
         print('============================================================')
-        print('[INFO] saving -', datetime.datetime.now().strftime('%m/%d/%Y %H:%M:%S'))
+        print('[INFO] saving -', datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
         print('detection count =', detection_count)
         print('under 1m % =', under_1m_perc)
         print('overweight % =', overweight_perc)
-        print('============================================================')
 
         # Reset temp memory
         detection_count = 0
         overweight_prediction = []
         under_1m = []
+        mask_compliance = 'NULL'
+        avg_age = 'NULL'
 
         time.sleep(60)
