@@ -6,7 +6,6 @@ import pandas as pd
 import random
 import time
 
-
 hostAddress = "Noptus.mysql.pythonanywhere-services.com"
 username = "Noptus"
 pwd = "794613852Video."
@@ -28,8 +27,8 @@ with sshtunnel.SSHTunnelForwarder(
     connection.autocommit = True
     mycursor = connection.cursor()
 
-    def insertLog(camera,timestamp,Person_ID:int,Mask_B,Proximity_B,Gender_B,Age_I:int,Weight_I:int):
-        sql_log_command="INSERT INTO ML_Logs_"+camera+"(Datetime,Person_ID, Mask_B, Proximity_B, Gender_B, Age_I,Weight_I) VALUES ({},{},{},{},{},{},{});".format(timestamp,Person_ID,Mask_B,Proximity_B,Gender_B,Age_I,Weight_I)
+    def insertLog(camera, timestamp, Population, Mask, Proximity, Gender, Age, Fitness):
+        sql_log_command="INSERT INTO ML_Logs_Serbia2(Datetime, Population_on_screen, Mask, Proximity, Gender, Age,Fitness) VALUES ({} ,{},{},{},{},{},{});".format(timestamp,Population,Mask,Proximity,Gender,Age,Fitness)
         mycursor.execute(sql_log_command)
 
     def random_date(start, end):
@@ -37,23 +36,9 @@ with sshtunnel.SSHTunnelForwarder(
             seconds=random.randint(0, int((end - start).total_seconds())),
         )
 
-    current = datetime.now()
-    old = datetime.now()-timedelta(days=30)
-    randomTime = random_date(old,current)
+    current = datetime.now().strftime('%Y%m%d%H')
 
-    n=1000
-
-    for i in range(n):
-        randomTime = random_date(old, current).strftime('%Y%m%d%H%M%S')
-        randomPersonID = random.randint(0,1000)
-        randomMask = random.randint(0,1)
-        randomProximity = random.randint(0,1)
-        randomGender = random.randint(0,1)
-        randomAge = random.randint(20,100)
-        randomWeight = random.randint(20,100)
-        camera = "Serbia"
-        insertLog(camera,randomTime,randomPersonID, randomMask, randomProximity, randomGender, randomAge, randomWeight)
-        print(str(i)+"/"+str(n))
+    insertLog("Serbia2",current,10, "NULL", 0, "NULL", "NULL",0)
 
     mycursor.close()
     connection.close()
