@@ -27,7 +27,7 @@ def insertLog(camera, timestamp, Population, Mask, Proximity, Gender, Age, Fitne
         ssh_username=username, ssh_password=pwd,
         remote_bind_address=(hostAddress, 3306),logger=logger
     ) as tunnel:
-        print("tunnel connected at port",tunnel.local_bind_port)
+        # print("tunnel connected at port",tunnel.local_bind_port)
         connection = pymysql.connect(
         user=username, password=pwd,
         host='127.0.0.1', port=tunnel.local_bind_port,
@@ -42,7 +42,7 @@ def insertLog(camera, timestamp, Population, Mask, Proximity, Gender, Age, Fitne
         connection.close()
 
     tunnel.stop()
-    print("tunnel disconnected")
+    # print("tunnel disconnected")
 
 if __name__ == "__main__":
     current = datetime.now().strftime('%Y%m%d%H%m%S')
