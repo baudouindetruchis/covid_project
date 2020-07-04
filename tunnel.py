@@ -1,6 +1,5 @@
 import datetime
 from datetime import timedelta,datetime
-import mysql.connector
 import sshtunnel
 import pandas as pd
 import random

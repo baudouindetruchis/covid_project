@@ -23,8 +23,8 @@ import video_scraping
 
 # ========== PATHS ==========
 
-project_path = 'D:/code#/[large_data]/covid_project/'
-# project_path = '/home/ec2-user/covid_project/'
+# project_path = 'D:/code#/[large_data]/covid_project/'
+project_path = '/home/ubuntu/covid_project/'
 location = 'serbia'
 video_url = 'http://93.87.72.254:8090/mjpg/video.mjpg'
 
@@ -161,7 +161,7 @@ for i in tqdm(range(10**5), desc='Processing video', dynamic_ncols=True):       
 
     # Check if time to save
     now = datetime.datetime.now()
-    if now.second == 0 or now.second == 1 or now.second == 2 or now.second == 3:
+    if now.minute == 0:
 
         # Print report
         tqdm.write('[INFO] saving - time = ' + datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
@@ -186,4 +186,4 @@ for i in tqdm(range(10**5), desc='Processing video', dynamic_ncols=True):       
         under_1m_perc = 0
 
         # Wait the end of condition
-        time.sleep(4)
+        time.sleep(60)
