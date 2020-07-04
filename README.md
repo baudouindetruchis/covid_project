@@ -6,6 +6,7 @@ Pipeline which outputs statistics to estimate risks of covid spreading within th
 - pip install keras
 - pip install tensorflow
 - pip install opencv-python
+- pip install Pillow
 - pip install cameratransform
 - pip install sshtunnel
 - pip install PyMySQL
