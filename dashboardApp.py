@@ -3,12 +3,15 @@ import dash_core_components as dcc
 import dash_html_components as html
 import dash_bootstrap_components as dbc
 import json
+
 import requests
 import mysql.connector
 import sshtunnel
 import pandas as pd
 import plotly.graph_objs as go
 import plotly.express as px
+
+print("Modules imported")
 
 def getAllLogs(cameraCountry):
     hostAddress = "Noptus.mysql.pythonanywhere-services.com"
@@ -30,27 +33,33 @@ def getAllLogs(cameraCountry):
         df = pd.DataFrame(result)
 
         mycursor.close()
+        connection.commit()
         connection.close()
     tunnel.stop()
 
-    df.columns = ['Log_ID', 'Datetime', 'Person_ID', 'Mask_B', 'Proximity_B', 'Gender_B', 'Age_I', 'Weight_I']
+    df.columns = ['Log_ID', 'Datetime', 'Population', 'Mask_B', 'Proximity_B', 'Gender_B', 'Age_I', 'Weight_I']
     df.index = pd.to_datetime(df['Datetime'])
+    df["Gender_B"]=0
+    df["Mask_B"]=0
+    df["Age_I"]=0
     A = df.Age_I
     M = df.Mask_B
     W = df.Weight_I
     P = df.Proximity_B
-    df["SafetyIndex"] = round(M * 25 + (1 - P) * 25 + (1 - abs(70 - W) / 100) * 25 + (1 - abs(20 - A) / 100) * 25)
 
+    df["SafetyIndex"] = round(M * 25 + (1 - P) * 25 + (1 - abs(70 - W) / 100) * 25 + (1 - abs(20 - A) / 100) * 25)
     return df
 
 def getAverages(df):
+    print("What")
     OverallAvg =[]
     OverallAvg.append(str(round(df["SafetyIndex"].mean())))
     OverallAvg.append(str(round(df["Mask_B"].mean()*100)))
-    OverallAvg.append(str(round(df["Age_I"].mean())))
-    OverallAvg.append(str(round(df["Proximity_B"].mean()*100)))
+    OverallAvg.append(str(round(df["Population"].mean())))
+    OverallAvg.append(str(round(df["Proximity_B"].mean())))
     OverallAvg.append(str(round(df["Weight_I"].mean())))
     OverallAvg.append(str(round(df["Gender_B"].mean()*100)))
+    print("averages computed")
     return OverallAvg
 
 def ScatterGraphFromDataFrame(X_axis,Y_axis,Y_title,colorScale):
@@ -75,7 +84,9 @@ def worldMap(dfMap,active):
     fig.update_layout(height=300, margin={"r": 10, "t": 0,"l": 10, "b": 0})
     return fig
 
-df = getAllLogs("Serbia")
+df = getAllLogs("Serbia2")
+
+print('Logs found')
 
 # choosing the right metric
 timeMetric=[]
@@ -96,9 +107,9 @@ colorPalettes = [RedGreen,GreenRed,ContinuousPurple,Extremes,ExtremesGreen]
 
 SafetyIndexGraph = ScatterGraphFromDataFrame(df.index,df.SafetyIndex,'%',RedGreen)
 Masks_Graph = ScatterGraphFromDataFrame(df.index,df.Mask_B*100,'%',RedGreen)
-Proximity_Graph = ScatterGraphFromDataFrame(df.index,df.Proximity_B*100,'%',GreenRed)
-Age_Graph = ScatterGraphFromDataFrame(df.index,df.Age_I,'Years old',ContinuousPurple)
-Weight_Graph = ScatterGraphFromDataFrame(df.index,df.Weight_I,'kg',Extremes)
+Proximity_Graph = ScatterGraphFromDataFrame(df.index,df.Proximity_B,'%',GreenRed)
+Age_Graph = ScatterGraphFromDataFrame(df.index,df.Population,'Person detected',GreenRed)
+Weight_Graph = ScatterGraphFromDataFrame(df.index,df.Weight_I,'%',RedGreen)
 Gender_Graph = ScatterGraphFromDataFrame(df.index,df.Gender_B,"%",Extremes)
 
 external_stylesheets =['https://codepen.io/chriddyp/pen/bWLwgP.css', dbc.themes.BOOTSTRAP]
@@ -278,26 +289,28 @@ def update_output(value):
 
 # Callback for averages
 @app.callback(
-    [dash.dependencies.Output('avg-target0', 'children'),
-     dash.dependencies.Output('avg-target1', 'children'),
+    [#dash.dependencies.Output('avg-target0', 'children'),
+     #dash.dependencies.Output('avg-target1', 'children'),
      dash.dependencies.Output('avg-target2', 'children'),
      dash.dependencies.Output('avg-target3', 'children'),
      dash.dependencies.Output('avg-target4', 'children'),
-     dash.dependencies.Output('avg-target5', 'children'),],
+     #dash.dependencies.Output('avg-target5', 'children'),
+    ],
     [dash.dependencies.Input('demo-dropdown', 'value')])
 def update_output(value):
     active = cams[int(value)]
-    dfActive = getAllLogs(active['Country'])
+    dfActive = getAllLogs("Serbia2")
     Averages = getAverages(dfActive)
 
     avgSafetyText = "Avg: "+str(Averages[0])+"%"
     avgMaskText = "Avg: "+str(Averages[1])+"%"
-    avgAgeText = "Avg: "+str(Averages[2])+"y"
+    avgAgeText = "Avg: "+str(Averages[2])+"/hour"
     avgProximityText = "Avg: "+str(Averages[3])+"%"
-    avgWeightText = "Avg: "+str(Averages[4])+"kg"
+    avgWeightText = "Avg: "+str(Averages[4])+"%"
     avgGenderText = "Avg: "+str(Averages[5])+" female"
 
-    return avgSafetyText,avgMaskText,avgAgeText,avgProximityText,avgWeightText,avgGenderText
+    return avgAgeText,avgProximityText,avgWeightText
+    #return avgSafetyText,avgMaskText,avgAgeText,avgProximityText,avgWeightText,avgGenderText
 
 # Callback for graphs
 @app.callback(
@@ -312,7 +325,7 @@ def update_output(value):
      dash.dependencies.Input('radioTime', 'value')])
 def update_output(camera,time):
     active = cams[int(camera)]
-    dfActive = getAllLogs(active['Country'])
+    dfActive = getAllLogs("Serbia2")
 
     if(time =="time"):
         df = dfActive.resample('10T').mean()
@@ -323,9 +336,9 @@ def update_output(camera,time):
 
     SafetyIndexGraph = ScatterGraphFromDataFrame(df.index, df.SafetyIndex, '%', RedGreen)
     Masks_Graph = ScatterGraphFromDataFrame(df.index, df.Mask_B * 100, '%', RedGreen)
-    Proximity_Graph = ScatterGraphFromDataFrame(df.index, df.Proximity_B * 100, '%', GreenRed)
-    Age_Graph = ScatterGraphFromDataFrame(df.index, df.Age_I, 'Years old', ContinuousPurple)
-    Weight_Graph = ScatterGraphFromDataFrame(df.index, df.Weight_I, 'kg', Extremes)
+    Proximity_Graph = ScatterGraphFromDataFrame(df.index, df.Proximity_B , '%', GreenRed)
+    Age_Graph = ScatterGraphFromDataFrame(df.index, df.Population, 'Person detected', GreenRed)
+    Weight_Graph = ScatterGraphFromDataFrame(df.index, df.Weight_I, '%', RedGreen)
     Gender_Graph = ScatterGraphFromDataFrame(df.index, df.Gender_B, "%", Extremes)
 
     SafetyIndexGraph.update_layout(transition_duration=50)
@@ -348,7 +361,7 @@ def update_output(camera,time):
      ])
 def update_output(x,y,color,camera,time):
     active = cams[int(camera)]
-    dfActive = getAllLogs(active['Country'])
+    dfActive = getAllLogs("Serbia2")
 
     if(time =="time"):
         df = dfActive.resample('10T').mean()
@@ -405,7 +418,6 @@ def GenerateGraphCard(CardTitle,width,graph,url,tooltip_id) :
             html.Div(CardTitle, className="card-title",
                      style={"margin-left": margin_left_text, "font-size": "35px",
                             "font-weight": "bold","color":"rgb(104,110,119)","vertical-align": "middle"}),
-            #html.H3("Avg:59%", style={"color":"rgb(104,110,119)","float":"right","vertical-align":"middle"}),
             dbc.Tooltip(tooltipText[tooltip_id],
             target="tooltip-target"+str(tooltip_id),style={"font-size":"15px"}),
             ],style={'display':'inline-block;'})
@@ -419,21 +431,44 @@ def GenerateGraphCard(CardTitle,width,graph,url,tooltip_id) :
         style={"background-color": "white","border-radius":"10px","box-shadow":"0 0 6px 2px rgba(0,0,0,.1)"}
     )
 
+def GenerateComingSoonGraphCard(CardTitle,width,graph,url,tooltip_id) :
+    margin_left=str(width)+'px'
+    margin_left_text=str(width+10)+'px'
+
+    topPart = html.Div([
+            html.Img(src=url, width=margin_left, height="60px",id="tooltip-target"+str(tooltip_id),
+                     style={'float': 'left',"vertical-align": "middle"}),
+
+            html.Div(CardTitle, className="card-title",
+                     style={"margin-left": margin_left_text, "font-size": "35px",
+                            "font-weight": "bold","color":"rgb(104,110,119)","vertical-align": "middle"}),
+            dbc.Tooltip(tooltipText[tooltip_id],
+            target="tooltip-target"+str(tooltip_id),style={"font-size":"15px"}),
+            ],style={'display':'inline-block;'})
+
+    return dbc.Card(
+        dbc.CardBody([topPart,
+                html.Div("Coming soon !",style={"font-size":"35px","margin-top":"200px",
+                                              "margin-bottom":"200px","text-align":"center","color":"rgb(104,110,119)"}),
+            ],),
+        style={"background-color": "white","border-radius":"10px","box-shadow":"0 0 6px 2px rgba(0,0,0,.1)"}
+    )
+
 tooltipText=[]
 tooltipText.append("We compute the safety score by factoring in : face masks worn, average age, average weight and distance between people")
 tooltipText.append("A machine learning model estimates if a person is wearing a face mask or not")
 tooltipText.append("A machine learning model estimates the age of each individual people on screen")
 tooltipText.append("A model evaluates how close people are on screen")
-tooltipText.append("A model evaluates the weight of each individual on screen")
+tooltipText.append("A model evaluates the fitness of each individual on screen")
 tooltipText.append("A model evaluates the gender of each individual on screen")
 tooltipText.append("Choose your own parameters !")
 
-SafetyCard = GenerateGraphCard("Safety index",52,SafetyIndexGraph,"https://i.ibb.co/Thh2kZh/safety.png",0)
-MasksCard = GenerateGraphCard("Masks worn",90,Masks_Graph,"https://i.ibb.co/VSZBdtq/mask.png",1)
-AgeCard = GenerateGraphCard("Age",60,Age_Graph,"https://i.ibb.co/gVp7sXj/age.png",2)
+SafetyCard = GenerateComingSoonGraphCard("Safety index",52,SafetyIndexGraph,"https://i.ibb.co/Thh2kZh/safety.png",0)
+MasksCard = GenerateComingSoonGraphCard("Masks worn",90,Masks_Graph,"https://i.ibb.co/VSZBdtq/mask.png",1)
+AgeCard = GenerateGraphCard("Population",60,Age_Graph,"https://i.ibb.co/pWXPvsk/population.png",2)
 ProximityCard = GenerateGraphCard("Proximity",75,Proximity_Graph,"https://i.ibb.co/CzVMDt5/distance.png",3)
-WeightCard = GenerateGraphCard("Weight",60,Weight_Graph,"https://i.ibb.co/6sn3V7H/weight.png",4)
-GenderCard = GenerateGraphCard("Gender",60,Gender_Graph,"https://i.ibb.co/gmDNYkz/gender.png",5)
+WeightCard = GenerateGraphCard("Fitness",60,Weight_Graph,"https://i.ibb.co/vPgJKc5/fitness.png",4)
+GenderCard = GenerateComingSoonGraphCard("Gender",60,Gender_Graph,"https://i.ibb.co/gmDNYkz/gender.png",5)
 
 def GenerateDataLabCard(graph):
     Parameters = html.Div(
@@ -445,12 +480,12 @@ def GenerateDataLabCard(graph):
                             {'label': 'Time', 'value': "index"},
                             {'label': 'Safety', 'value': "SafetyIndex"},
                             {'label': 'Masks', 'value': "Mask_B"},
-                            {'label': 'Weight', 'value': "Weight_I"},
-                            {'label': 'Age', 'value': "Age_I"},
+                            {'label': 'Fitness', 'value': "Weight_I"},
+                            {'label': 'Population', 'value': "Population"},
                             {'label': 'Proximity', 'value': "Proximity_B"},
                             {'label': 'Gender', 'value': "Gender_B"},
                          ],
-                         value="Age_I", style={"font-size": "15px","text-align":"left"}
+                         value="Population", style={"font-size": "15px","text-align":"left"}
                          ), md=3
                 ),
             dbc.Col(html.Div("Y-axis"),md=1),
@@ -459,12 +494,12 @@ def GenerateDataLabCard(graph):
                          options=[
                              {'label': 'Safety', 'value': "SafetyIndex"},
                              {'label': 'Masks', 'value': "Mask_B"},
-                             {'label': 'Weight', 'value': "Weight_I"},
-                             {'label': 'Age', 'value': "Age_I"},
+                             {'label': 'Fitness', 'value': "Weight_I"},
+                             {'label': 'Population', 'value': "Population"},
                              {'label': 'Proximity', 'value': "Proximity_B"},
                              {'label': 'Gender', 'value': "Gender_B"},
                          ],
-                         value= "Mask_B", style={"font-size": "15px","text-align":"left"}
+                         value= "Proximity_B", style={"font-size": "15px","text-align":"left"}
                          ),md=3
             ),
             dbc.Col(html.Div("Palette"),md=1),
@@ -493,7 +528,6 @@ def GenerateDataLabCard(graph):
             html.Div("DataLab", className="card-title",
                      style={"margin-left": "70px", "font-size": "35px",
                             "font-weight": "bold","color":"rgb(104,110,119)","vertical-align": "middle"}),
-            #html.H3("Avg:59%", style={"color":"rgb(104,110,119)","float":"right","vertical-align":"middle"}),
             dbc.Tooltip(tooltipText[6],
             target="tooltip-target6",style={"font-size":"15px"}),
             ],style={'display':'inline-block;'})
