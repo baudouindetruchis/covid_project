@@ -1,3 +1,5 @@
+import time
+
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -51,7 +53,6 @@ def getAllLogs(cameraCountry):
     return df
 
 def getAverages(df):
-    print("What")
     OverallAvg =[]
     OverallAvg.append(str(round(df["SafetyIndex"].mean())))
     OverallAvg.append(str(round(df["Mask_B"].mean()*100)))
@@ -59,7 +60,6 @@ def getAverages(df):
     OverallAvg.append(str(round(df["Proximity_B"].mean())))
     OverallAvg.append(str(round(df["Weight_I"].mean())))
     OverallAvg.append(str(round(df["Gender_B"].mean()*100)))
-    print("averages computed")
     return OverallAvg
 
 def ScatterGraphFromDataFrame(X_axis,Y_axis,Y_title,colorScale):
@@ -147,38 +147,19 @@ CoordRows = [['Market',43.136670, 20.512220],
 colmns = ['Camera', 'Latitude', 'Longitude']
 dfMap = pd.DataFrame(data=CoordRows, columns=colmns)
 
-FranceCam = {
-  "Link": "http://176.180.45.18:8082/mjpg/video.mjpg",
-  "Name": "French Laundromat",
-  "Country": "France",
-  "Abv":"fr",
-  "City": "Beauvais",
-  "Timezone":'Europe/Paris',
-  "Lat":"49.433330",
-  'Lon':"2.083330"
-}
-SwissCam = {
-  "Link": "http://213.193.89.202/mjpg/video.mjpg",
-  "Name": "Swiss street",
-  "Country": "Switzerland",
-  "Abv":"che",
-  "City": "Himmelried",
-  "Timezone":'Europe/Zurich',
-  "Lat":"47.421110",
-  'Lon':"7.596590"
-}
-SerbiaCam = {
-  "Link": "http://93.87.72.254:8090/mjpg/video.mjpg",
-  "Name": "Serbian Market",
-  "Country": "Serbia",
-  "Abv":"srb",
-  "City": "Novi Pazar",
-  "Timezone":'Europe/Zurich',
-  "Lat":"43.136670",
-  'Lon':"20.512220"
-}
-cams = [SwissCam,FranceCam,SerbiaCam]
-active = SerbiaCam
+def getCamsList():
+    json_url = "https://api.npoint.io/dc17bafef2764d5b3b9b"
+    allInfos = json.loads(requests.get(json_url).text)
+    camList = allInfos['cameras']
+    return camList
+
+def getCamInfo(name):
+    camList = getCamsList()
+    camInfo = camList[name]
+    return camInfo
+
+cams = getCamsList()
+active = getCamInfo("Serbia1")
 
 helperText = html.Div(
     html.Div([
@@ -233,13 +214,10 @@ topPartCamera = html.Div([
     ], style = {'display': 'inline-block;'})
 
 
+camList = getCamsList()
 CameraSelection = dcc.Dropdown(id='demo-dropdown',
-                options=[
-                    {'label': 'Swiss street', 'value': '0'},
-                    {'label': 'France Laundromat', 'value': '1'},
-                    {'label': 'Serbian Market', 'value': '2'},
-                        ],
-                value='2',style={"font-size":"15px"}
+                options=[{'label': camList[k]["Name"], 'value': k} for k in camList.keys()],
+                value='Serbia1',style={"font-size":"15px"},clearable=False
                 )
 
 TimeSelection = \
@@ -258,11 +236,11 @@ CountryStatsCard = dbc.Card(
                 CameraSelection,html.Br(),
                 statsTable,html.Br(),
                 TimeSelection, html.Br(),
-
         ],
         ),
         style={"height":'100%',"background-color":'white',"box-shadow":"0 0 6px 2px rgba(0,0,0,.1)","border-radius":"10px"}
     )
+
 
 # Callback for country stats
 @app.callback(
@@ -273,10 +251,13 @@ CountryStatsCard = dbc.Card(
      dash.dependencies.Output('info2', 'children'),
      dash.dependencies.Output('info3', 'children'),
      dash.dependencies.Output('info4', 'children'),
-     dash.dependencies.Output('worldMap', 'figure')],
+     dash.dependencies.Output('worldMap', 'figure'),
+     dash.dependencies.Output("loading-output-1", "value"),
+     dash.dependencies.Output("loading-output-2", "value")],
     [dash.dependencies.Input('demo-dropdown', 'value')])
 def update_output(value):
-    active = cams[int(value)]
+    active = cams[value]
+
     infos = getCountryInfo(active["Country"],active["Abv"])
     updatedMap = worldMap(dfMap, active)
     updatedMap.update_layout(transition_duration=500)
@@ -284,8 +265,9 @@ def update_output(value):
     countryop = round(infos[4]/1000000,1)
     infected = infos[0]+" ("+str(round(int(infos[0])/infos[4],2))+"%)"
 
-    return cams[int(value)]["Link"],active["Country"]+" population",\
-            infected,str(countryop)+'M',infos[1]+' ('+infos[5]+"%)",infos[2],infos[3],updatedMap
+    return cams[value]["Link"],active["Country"]+" population",\
+           infected,str(countryop)+'M',infos[1]+' ('+infos[5]+"%)",infos[2],infos[3],updatedMap,\
+           value,value
 
 # Callback for averages
 @app.callback(
@@ -298,8 +280,11 @@ def update_output(value):
     ],
     [dash.dependencies.Input('demo-dropdown', 'value')])
 def update_output(value):
-    active = cams[int(value)]
-    dfActive = getAllLogs("Serbia2")
+    activeCam = cams[value]
+    dbAdress = activeCam["db"]
+    print(dbAdress)
+    dfActive = getAllLogs(dbAdress)
+
     Averages = getAverages(dfActive)
 
     avgSafetyText = "Avg: "+str(Averages[0])+"%"
@@ -314,18 +299,21 @@ def update_output(value):
 
 # Callback for graphs
 @app.callback(
-    [dash.dependencies.Output('cardGraph0', 'figure'),
-     dash.dependencies.Output('cardGraph1', 'figure'),
+    [#dash.dependencies.Output('cardGraph0', 'figure'),
+     #dash.dependencies.Output('cardGraph1', 'figure'),
      dash.dependencies.Output('cardGraph2', 'figure'),
      dash.dependencies.Output('cardGraph3', 'figure'),
      dash.dependencies.Output('cardGraph4', 'figure'),
-     dash.dependencies.Output('cardGraph5', 'figure'),
+     #dash.dependencies.Output('cardGraph5', 'figure'),
      ],
     [dash.dependencies.Input('demo-dropdown', 'value'),
      dash.dependencies.Input('radioTime', 'value')])
 def update_output(camera,time):
-    active = cams[int(camera)]
-    dfActive = getAllLogs("Serbia2")
+    activeCam = cams[camera]
+    dbAdress = activeCam["db"]
+    print(dbAdress)
+    dfActive = getAllLogs(dbAdress)
+    print("Yes")
 
     if(time =="time"):
         df = dfActive.resample('10T').mean()
@@ -348,20 +336,26 @@ def update_output(camera,time):
     Weight_Graph.update_layout(transition_duration=50)
     Gender_Graph.update_layout(transition_duration=50)
 
-    return SafetyIndexGraph,Masks_Graph,Age_Graph,Proximity_Graph,Weight_Graph,Gender_Graph
+    #return SafetyIndexGraph,Masks_Graph,Age_Graph,Proximity_Graph,Weight_Graph,Gender_Graph
+    return Age_Graph,Proximity_Graph,Weight_Graph
 
 
 # Callback for Datalab
-@app.callback(dash.dependencies.Output('cardGraph6', 'figure'),
+@app.callback(
+    [dash.dependencies.Output('cardGraph6', 'figure'),
+     dash.dependencies.Output("loading-output-datalab", "value")],
     [dash.dependencies.Input('LabDrop1', 'value'),
      dash.dependencies.Input('LabDrop2', 'value'),
      dash.dependencies.Input('LabDrop3', 'value'),
      dash.dependencies.Input('demo-dropdown', 'value'),
-     dash.dependencies.Input('radioTime', 'value')
+     dash.dependencies.Input('radioTime', 'value'),
+
      ])
 def update_output(x,y,color,camera,time):
-    active = cams[int(camera)]
-    dfActive = getAllLogs("Serbia2")
+    activeCam = cams[camera]
+    dbAdress = activeCam["db"]
+    print(dbAdress)
+    dfActive = getAllLogs(dbAdress)
 
     if(time =="time"):
         df = dfActive.resample('10T').mean()
@@ -387,13 +381,19 @@ def update_output(x,y,color,camera,time):
     if (x != 'index'):
         datalab_graph.update_xaxes(rangeslider=dict(visible=True))
 
-    return datalab_graph
+    return datalab_graph,color
 
 
 
 LiveVideoCard = dbc.Card(
         dbc.CardBody(
+            [
+            dcc.Loading(
+            id="loading-1",
+            type="default",
+            children=html.Div(id="loading-output-1"),style={"padding-top":"55%"}),
             html.Img(id="video",src=active['Link'],width='100%',height="350px"),
+            ]
         ),
         style={"background-color":'white',"text-align":'center',
                "border-radius":"10px","box-shadow":"0 0 6px 2px rgba(0,0,0,.1)"}
@@ -535,6 +535,10 @@ def GenerateDataLabCard(graph):
     return dbc.Card(
         dbc.CardBody([topPart,
                 html.Div([
+                    dcc.Loading(
+                        id="loading-datalab",
+                        type="default",
+                        children=html.Div(id="loading-output-datalab"), style={"padding-top": "55%"}),
                     dcc.Graph(figure=graph,id="cardGraph6")
                 ],style={"margin-top":"20px"})
             ],),
@@ -559,6 +563,10 @@ ContactCard = html.Div([
 
 map = html.Div(dcc.Graph(figure=worldMap(dfMap,active),id="worldMap"))
 mapCard = html.Div([
+    dcc.Loading(
+            id="loading-2",
+            type="default",
+            children=html.Div(id="loading-output-2"),style={"padding-top":"55%"}),
     html.Img(src="https://i.ibb.co/3rCfgFS/Image4.png",width="40px",height="40px",
              style={'float': 'left', "vertical-align": "middle","margin-top":"12px","margin-left":"12px"}),
     html.H1("Locations", className="card-title",
