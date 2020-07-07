@@ -1,5 +1,3 @@
-import time
-
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -13,7 +11,6 @@ import pandas as pd
 import plotly.graph_objs as go
 import plotly.express as px
 
-print("Modules imported")
 
 def getAllLogs(cameraCountry):
     hostAddress = "Noptus.mysql.pythonanywhere-services.com"
@@ -84,9 +81,49 @@ def worldMap(dfMap,active):
     fig.update_layout(height=300, margin={"r": 10, "t": 0,"l": 10, "b": 0})
     return fig
 
-df = getAllLogs("Serbia2")
+def getCamsList():
+    json_url = "https://api.npoint.io/dc17bafef2764d5b3b9b"
+    allInfos = json.loads(requests.get(json_url).text)
+    camList = allInfos['cameras']
+    return camList
 
-print('Logs found')
+def getCamInfo(name):
+    camList = getCamsList()
+    camInfo = camList[name]
+    return camInfo
+
+def getCountryInfo(country,abv):
+    json_url = "https://api.covid19api.com/live/country/"+country
+    json_url2 =  "https://restcountries.eu/rest/v2/alpha/"+abv
+
+    dataCovid = json.loads(requests.get(json_url).text)
+    dataCountry = json.loads(requests.get(json_url2).text)
+    population = dataCountry['population']
+
+    if (country=="France") :
+        latest_data = dataCovid[len(dataCovid)-2]
+    else:
+        latest_data = dataCovid[len(dataCovid)-1]
+
+    perK = round(latest_data['Confirmed'] / (dataCountry['population']/1000),1)
+    mortality = round((latest_data['Deaths'] / latest_data['Confirmed'])*100)
+    recoverability = round((latest_data['Recovered'] / latest_data['Confirmed'])*100)
+    activity = round((latest_data['Active'] / latest_data['Confirmed'])*100)
+
+    output=[]
+    output.append(population)
+    output.append(latest_data['Confirmed'])
+    output.append(perK)
+    output.append(latest_data['Deaths'])
+    output.append(mortality)
+    output.append(latest_data['Recovered'])
+    output.append(recoverability)
+    output.append(latest_data['Active'])
+    output.append(activity)
+
+    return output
+
+df = getAllLogs("Serbia2")
 
 # choosing the right metric
 timeMetric=[]
@@ -115,48 +152,13 @@ Gender_Graph = ScatterGraphFromDataFrame(df.index,df.Gender_B,"%",Extremes)
 external_stylesheets =['https://codepen.io/chriddyp/pen/bWLwgP.css', dbc.themes.BOOTSTRAP]
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
-def getCountryInfo(country,abv):
-    json_url = "https://api.covid19api.com/live/country/"+country
-    json_url2 =  "https://restcountries.eu/rest/v2/alpha/"+abv
 
-    dataCovid = json.loads(requests.get(json_url).text)
-    dataCountry = json.loads(requests.get(json_url2).text)
-    population = dataCountry['population']
-
-    if (country=="France") :
-        latest_data = dataCovid[len(dataCovid)-2]
-    else:
-        latest_data = dataCovid[len(dataCovid)-1]
-
-    output=[]
-    output.append(str(latest_data['Confirmed']))
-    output.append(str(latest_data['Deaths']))
-    output.append(str(latest_data['Recovered']))
-    output.append(str(latest_data['Active']))
-    output.append(population)
-    perM = round(latest_data['Confirmed'] / (dataCountry['population']/1000),1)
-    output.append(str(perM))
-    mortality = round(latest_data['Deaths'] / dataCountry['population'],2)
-    output.append(str(mortality))
-
-    return output
-
-CoordRows = [['Market',43.136670, 20.512220],
-            ['laundromat',49.433330,2.083330],
-            ['Street',47.421110,7.596590]]
+camList = getCamsList()
+CoordRows=[[]]
+for k in camList.keys():
+    CoordRows.append([camList[k]["Name"],camList[k]["Lat"], camList[k]["Lon"]])
 colmns = ['Camera', 'Latitude', 'Longitude']
 dfMap = pd.DataFrame(data=CoordRows, columns=colmns)
-
-def getCamsList():
-    json_url = "https://api.npoint.io/dc17bafef2764d5b3b9b"
-    allInfos = json.loads(requests.get(json_url).text)
-    camList = allInfos['cameras']
-    return camList
-
-def getCamInfo(name):
-    camList = getCamsList()
-    camInfo = camList[name]
-    return camInfo
 
 cams = getCamsList()
 active = getCamInfo("Serbia1")
@@ -165,7 +167,7 @@ helperText = html.Div(
     html.Div([
         html.Div("Coming soon :"),
         html.Div("DataLab improvements, Loading animations, more cameras !!")]),
-    style={"font-size": "20px", "background-color": "rgb(244,245,249)", "color": "rgb(104,110,119)",
+    style={"font-size": "1.5vw", "background-color": "rgb(244,245,249)", "color": "rgb(104,110,119)",
            "border-radius": "10px", "padding": "8px", "text-align": "left",
            "float": "right", "vertical-align": "middle", "margin-top": "5px", "margin-right": "50px"}
 )
@@ -174,8 +176,9 @@ MainCard = dbc.Card(
         dbc.CardBody(
             [
                 html.A([
-                    html.Img(src="https://i.ibb.co/LtHfyfc/looking.png", width='110px', height="90px",
-                             style={'float': 'left', "vertical-align": "middle"})
+                    html.Img(src="https://i.ibb.co/LtHfyfc/looking.png",
+                             #width='50%x', height="50%",
+                             style={'float': 'left', "vertical-align": "middle","max-width": "7%","height": "auto;"})
                 ], href='covidwatchml.com')
                 ,
                 html.A([
@@ -183,8 +186,10 @@ MainCard = dbc.Card(
                              style={'float':'right',"vertical-align":"middle"})
                 ], href='https://www.linkedin.com/company/garageisep/')
                 ,helperText,
-                html.H1("Covid watch ML", className="card-title",
-                        style={"font-size":"50px","padding-top": "12px","margin-left":"120px","vertical-align":"midle"}),
+                html.Div("Covid watch ML", className="card-title",
+                        style={"font-size":"3.5vw","padding-top": "12px","margin-left":"120px","vertical-align":"midle",
+                               "fontFamily": "Verdana","font-weight":"bold"
+                               }),
 
             ],
         ),
@@ -246,8 +251,8 @@ CountryStatsCard = dbc.Card(
 @app.callback(
     [dash.dependencies.Output('video', 'src'),
      dash.dependencies.Output('statsIntro', 'children'),
-     dash.dependencies.Output('info1', 'children'),
      dash.dependencies.Output('info0', 'children'),
+     dash.dependencies.Output('info1', 'children'),
      dash.dependencies.Output('info2', 'children'),
      dash.dependencies.Output('info3', 'children'),
      dash.dependencies.Output('info4', 'children'),
@@ -257,17 +262,29 @@ CountryStatsCard = dbc.Card(
     [dash.dependencies.Input('demo-dropdown', 'value')])
 def update_output(value):
     active = cams[value]
-
     infos = getCountryInfo(active["Country"],active["Abv"])
+    countryPopulationInMillion = round(infos[0]/1000000,1)
+
     updatedMap = worldMap(dfMap, active)
     updatedMap.update_layout(transition_duration=500)
 
-    countryop = round(infos[4]/1000000,1)
-    infected = infos[0]+" ("+str(round(int(infos[0])/infos[4],2))+"%)"
+    StatsIntroText = active["Country"]+" population"
+    CountryPopulationStat = str(countryPopulationInMillion)+"M"
+    InfectedStat = str(infos[1])+" ("+str(infos[2])+"/k)"
+    DeadStat = str(infos[3])+" ("+str(infos[4])+"%)"
+    RecoStat = str(infos[5])+" ("+str(infos[6])+"%)"
+    ActiStat = str(infos[7])+" ("+str(infos[8])+"%)"
 
-    return cams[value]["Link"],active["Country"]+" population",\
-           infected,str(countryop)+'M',infos[1]+' ('+infos[5]+"%)",infos[2],infos[3],updatedMap,\
-           value,value
+    return cams[value]["Link"],\
+           StatsIntroText,\
+           CountryPopulationStat,\
+           InfectedStat,\
+           DeadStat,\
+           RecoStat,\
+           ActiStat,\
+           updatedMap,\
+           value,\
+           value
 
 # Callback for averages
 @app.callback(
@@ -282,7 +299,6 @@ def update_output(value):
 def update_output(value):
     activeCam = cams[value]
     dbAdress = activeCam["db"]
-    print(dbAdress)
     dfActive = getAllLogs(dbAdress)
 
     Averages = getAverages(dfActive)
@@ -311,9 +327,7 @@ def update_output(value):
 def update_output(camera,time):
     activeCam = cams[camera]
     dbAdress = activeCam["db"]
-    print(dbAdress)
     dfActive = getAllLogs(dbAdress)
-    print("Yes")
 
     if(time =="time"):
         df = dfActive.resample('10T').mean()
@@ -349,12 +363,10 @@ def update_output(camera,time):
      dash.dependencies.Input('LabDrop3', 'value'),
      dash.dependencies.Input('demo-dropdown', 'value'),
      dash.dependencies.Input('radioTime', 'value'),
-
      ])
 def update_output(x,y,color,camera,time):
     activeCam = cams[camera]
     dbAdress = activeCam["db"]
-    print(dbAdress)
     dfActive = getAllLogs(dbAdress)
 
     if(time =="time"):
@@ -383,8 +395,6 @@ def update_output(x,y,color,camera,time):
 
     return datalab_graph,color
 
-
-
 LiveVideoCard = dbc.Card(
         dbc.CardBody(
             [
@@ -392,7 +402,7 @@ LiveVideoCard = dbc.Card(
             id="loading-1",
             type="default",
             children=html.Div(id="loading-output-1"),style={"padding-top":"55%"}),
-            html.Img(id="video",src=active['Link'],width='100%',height="350px"),
+            html.Img(id="video",src=active['Link'],width='100%',height="400px"),
             ]
         ),
         style={"background-color":'white',"text-align":'center',
@@ -416,7 +426,7 @@ def GenerateGraphCard(CardTitle,width,graph,url,tooltip_id) :
                      style={'float': 'left',"vertical-align": "middle"}),
 
             html.Div(CardTitle, className="card-title",
-                     style={"margin-left": margin_left_text, "font-size": "35px",
+                     style={"margin-left": margin_left_text, "font-size": "2.5vw",
                             "font-weight": "bold","color":"rgb(104,110,119)","vertical-align": "middle"}),
             dbc.Tooltip(tooltipText[tooltip_id],
             target="tooltip-target"+str(tooltip_id),style={"font-size":"15px"}),
@@ -440,7 +450,7 @@ def GenerateComingSoonGraphCard(CardTitle,width,graph,url,tooltip_id) :
                      style={'float': 'left',"vertical-align": "middle"}),
 
             html.Div(CardTitle, className="card-title",
-                     style={"margin-left": margin_left_text, "font-size": "35px",
+                     style={"margin-left": margin_left_text, "font-size": "2.5vw",
                             "font-weight": "bold","color":"rgb(104,110,119)","vertical-align": "middle"}),
             dbc.Tooltip(tooltipText[tooltip_id],
             target="tooltip-target"+str(tooltip_id),style={"font-size":"15px"}),
@@ -448,7 +458,7 @@ def GenerateComingSoonGraphCard(CardTitle,width,graph,url,tooltip_id) :
 
     return dbc.Card(
         dbc.CardBody([topPart,
-                html.Div("Coming soon !",style={"font-size":"35px","margin-top":"200px",
+                html.Div("Coming soon !",style={"font-size":"2.5vw","margin-top":"200px",
                                               "margin-bottom":"200px","text-align":"center","color":"rgb(104,110,119)"}),
             ],),
         style={"background-color": "white","border-radius":"10px","box-shadow":"0 0 6px 2px rgba(0,0,0,.1)"}
@@ -526,7 +536,7 @@ def GenerateDataLabCard(graph):
             html.Img(src="https://i.ibb.co/LdCtKVb/datalab.png", width="60px", height="60px",id="tooltip-target6",
                      style={'float': 'left',"vertical-align": "middle"}),
             html.Div("DataLab", className="card-title",
-                     style={"margin-left": "70px", "font-size": "35px",
+                     style={"margin-left": "70px", "font-size": "2.5vw",
                             "font-weight": "bold","color":"rgb(104,110,119)","vertical-align": "middle"}),
             dbc.Tooltip(tooltipText[6],
             target="tooltip-target6",style={"font-size":"15px"}),
@@ -553,12 +563,12 @@ DataLabCard = GenerateDataLabCard(DataLab_Graph)
 
 ContactCard = html.Div([
             html.Div([
-                html.Img(src="https://i.ibb.co/KNMqncx/Image3.png",style={"height":"100px","width":"100%"}),
+                html.Img(src="https://i.ibb.co/KNMqncx/Image3.png",width="100%",height="100px"),
                 html.Img(src="https://hitcounter.pythonanywhere.com/count/tag.svg?url=https%3A%2F%2Fnoptus.pythonanywhere.com%2F",
                 alt="Hits", width=120, height=32,style={"position":"absolute","top":"16px","left":"25px"}),
                 html.H2("Tips, suggestions ? covidwatch@garageisep.com !",
                 style={"position":"absolute", "bottom": "8px","left": "20px","color":"white","font-size":"25px"}),
-                ],style={"float":"left","position":"relative"}),
+                ],style={"float":"left","position":"relative","width":"100%","height":"100px"}),
             ],)
 
 map = html.Div(dcc.Graph(figure=worldMap(dfMap,active),id="worldMap"))
