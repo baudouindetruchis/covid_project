@@ -3,7 +3,6 @@ import dash_core_components as dcc
 import dash_html_components as html
 import dash_bootstrap_components as dbc
 import json
-
 import requests
 import mysql.connector
 import sshtunnel
@@ -11,6 +10,8 @@ import pandas as pd
 import plotly.graph_objs as go
 import plotly.express as px
 
+external_stylesheets =['https://codepen.io/chriddyp/pen/bWLwgP.css', dbc.themes.BOOTSTRAP]
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 def getAllLogs(cameraCountry):
     hostAddress = "Noptus.mysql.pythonanywhere-services.com"
@@ -19,7 +20,8 @@ def getAllLogs(cameraCountry):
     database = "Noptus$CCTV_logs"
     sshtunnel.SSH_TIMEOUT = sshtunnel.TUNNEL_TIMEOUT = 5.0
     with sshtunnel.SSHTunnelForwarder(
-            ('ssh.pythonanywhere.com'),ssh_username=username, ssh_password=pwd,remote_bind_address=(hostAddress, 3306)
+            ('ssh.pythonanywhere.com'),ssh_username=username,
+            ssh_password=pwd,remote_bind_address=(hostAddress, 3306)
     ) as tunnel:
         connection = mysql.connector.connect(user=username, password=pwd,
             host='127.0.0.1', port=tunnel.local_bind_port,database=database)
@@ -45,7 +47,6 @@ def getAllLogs(cameraCountry):
     M = df.Mask_B
     W = df.Weight_I
     P = df.Proximity_B
-
     df["SafetyIndex"] = round(M * 25 + (1 - P) * 25 + (1 - abs(70 - W) / 100) * 25 + (1 - abs(20 - A) / 100) * 25)
     return df
 
@@ -64,7 +65,8 @@ def ScatterGraphFromDataFrame(X_axis,Y_axis,Y_title,colorScale):
     fig = px.scatter(df, x=X_axis, y=Y_axis, color=Y_axis,color_continuous_scale=colorScale)
     fig.update_xaxes(rangeslider=dict(visible=True),rangeselector=dict(buttons=list([
         dict(step="all"),dict(count=1, label=" Month ", step="month", stepmode="backward"),
-        dict(count=7, label=" Week ", step="day", stepmode="backward"),dict(count=1, label=" Day ", step="day", stepmode="backward"),
+        dict(count=7, label=" Week ", step="day", stepmode="backward"),
+        dict(count=1, label=" Day ", step="day", stepmode="backward"),
         dict(count=1, label=" Hour ", step="hour", stepmode="backward")]))
     )
     fig.update_yaxes(title_text=Y_title,)
@@ -124,16 +126,7 @@ def getCountryInfo(country,abv):
     return output
 
 df = getAllLogs("Serbia2")
-
-# choosing the right metric
-timeMetric=[]
-timeMetric.append( [df.resample('10080T').mean(),"Week"] )
-timeMetric.append( [df.resample('1440T').mean(),"Day"] )
-timeMetric.append( [df.resample('60T').mean(),"Hour"] )
-timeMetric.append( [df.resample('10T').mean(),"10 minutes interval"] )
-timeMetric.append( [df.groupby(df.index.hour).mean(),"Hours of the day"] )
-Metric = 3
-df = timeMetric[Metric][0]
+df = df.resample('10T').mean()
 
 RedGreen = [(0, "rgb(250,92,124)"), (1, "rgb(0,208,173)")]
 GreenRed = [(0, "rgb(0,208,173)"), (1, "rgb(250,92,124)")]
@@ -149,8 +142,7 @@ Age_Graph = ScatterGraphFromDataFrame(df.index,df.Population,'Person detected',G
 Weight_Graph = ScatterGraphFromDataFrame(df.index,df.Weight_I,'%',RedGreen)
 Gender_Graph = ScatterGraphFromDataFrame(df.index,df.Gender_B,"%",Extremes)
 
-external_stylesheets =['https://codepen.io/chriddyp/pen/bWLwgP.css', dbc.themes.BOOTSTRAP]
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+
 
 
 camList = getCamsList()
@@ -166,7 +158,7 @@ active = getCamInfo("Serbia1")
 helperText = html.Div(
     html.Div([
         html.Div("Coming soon :"),
-        html.Div("DataLab improvements, Loading animations, more cameras !!")]),
+        html.Div("Safety score, Mask detection, more cameras !")]),
     style={"font-size": "1.5vw", "background-color": "rgb(244,245,249)", "color": "rgb(104,110,119)",
            "border-radius": "10px", "padding": "8px", "text-align": "left",
            "float": "right", "vertical-align": "middle", "margin-top": "5px", "margin-right": "50px"}
@@ -178,7 +170,8 @@ MainCard = dbc.Card(
                 html.A([
                     html.Img(src="https://i.ibb.co/LtHfyfc/looking.png",
                              #width='50%x', height="50%",
-                             style={'float': 'left', "vertical-align": "middle","max-width": "7%","height": "auto;"})
+                             style={'float': 'left', "vertical-align": "middle",
+                                    "max-width": "7%","height": "auto;"})
                 ], href='covidwatchml.com')
                 ,
                 html.A([
@@ -187,12 +180,11 @@ MainCard = dbc.Card(
                 ], href='https://www.linkedin.com/company/garageisep/')
                 ,helperText,
                 html.Div("Covid watch ML", className="card-title",
-                        style={"font-size":"3.5vw","padding-top": "12px","margin-left":"120px","vertical-align":"midle",
+                        style={"font-size":"3.5vw","padding-top": "12px",
+                               "margin-left":"120px","vertical-align":"midle",
                                "fontFamily": "Verdana","font-weight":"bold"
                                }),
-
-            ],
-        ),
+            ],),
         style={"background-color":'rgb(41,50,63)',"color":'white'}
     )
 
@@ -215,37 +207,33 @@ statsTable = dbc.Table(statsTableBody)
 topPartCamera = html.Div([
     html.Img(src="https://i.ibb.co/bFMBLvf/cctv.png", width = "53px", height = "35px",
              style = {'float': 'left',"vertical-align": "middle"}),
-    html.Div("Camera selection",style={"font-weight":"bold","font-size":"30px","color":"rgb(104,110,119)"}),
+    html.Div("Camera selection",style={"font-weight":"bold",
+                                       "font-size":"30px","color":"rgb(104,110,119)"}),
     ], style = {'display': 'inline-block;'})
-
 
 camList = getCamsList()
 CameraSelection = dcc.Dropdown(id='demo-dropdown',
                 options=[{'label': camList[k]["Name"], 'value': k} for k in camList.keys()],
-                value='Serbia1',style={"font-size":"15px"},clearable=False
-                )
+                value='Serbia1',style={"font-size":"15px"},clearable=False)
 
 TimeSelection = \
-        dcc.RadioItems(id='radioTime',
-    options=[
+        dcc.RadioItems(id='radioTime',options=[
         {'label': ' Over time', 'value': 'time'},
         {'label': ' In a day', 'value': 'day'},
         {'label': ' By day', 'value': 'week'}
-    ],
-    value='time',labelStyle={'display': 'inline-block',"margin": "0 12px 0 12px"},style={"font-size":"15px"}
-    )
+    ],value='time',
+    labelStyle={'display': 'inline-block',"margin": "0 12px 0 12px"},
+    style={"font-size":"15px"})
 
-CountryStatsCard = dbc.Card(
-        dbc.CardBody([
+CountryStatsCard = dbc.Card(dbc.CardBody([
                 topPartCamera,html.Br(),
                 CameraSelection,html.Br(),
                 statsTable,html.Br(),
                 TimeSelection, html.Br(),
-        ],
-        ),
-        style={"height":'100%',"background-color":'white',"box-shadow":"0 0 6px 2px rgba(0,0,0,.1)","border-radius":"10px"}
+        ],),
+        style={"height":'100%',"background-color":'white',
+               "box-shadow":"0 0 6px 2px rgba(0,0,0,.1)","border-radius":"10px"}
     )
-
 
 # Callback for country stats
 @app.callback(
@@ -303,12 +291,12 @@ def update_output(value):
 
     Averages = getAverages(dfActive)
 
-    avgSafetyText = "Avg: "+str(Averages[0])+"%"
-    avgMaskText = "Avg: "+str(Averages[1])+"%"
-    avgAgeText = "Avg: "+str(Averages[2])+"/hour"
-    avgProximityText = "Avg: "+str(Averages[3])+"%"
-    avgWeightText = "Avg: "+str(Averages[4])+"%"
-    avgGenderText = "Avg: "+str(Averages[5])+" female"
+    avgSafetyText = "Avg : "+str(Averages[0])+"%"
+    avgMaskText = "Avg : "+str(Averages[1])+"%"
+    avgAgeText = "Avg : "+str(Averages[2])+"/hour"
+    avgProximityText = "Avg : "+str(Averages[3])+"%"
+    avgWeightText = "Avg : "+str(Averages[4])+"%"
+    avgGenderText = "Avg : "+str(Averages[5])+" female"
 
     return avgAgeText,avgProximityText,avgWeightText
     #return avgSafetyText,avgMaskText,avgAgeText,avgProximityText,avgWeightText,avgGenderText
@@ -413,18 +401,20 @@ def GenerateGraphCard(CardTitle,width,graph,url,tooltip_id) :
     margin_left=str(width)+'px'
     margin_left_text=str(width+10)+'px'
 
-    avgSection = html.Div(
-        html.Div(id="avg-target"+str(tooltip_id)),
+    avgSection = html.Div([
+        html.Img(src='https://i.ibb.co/WFmVbrn/info.png',
+                 width="40px", height="40px", id="tooltip-target" + str(tooltip_id),
+                 style={'float': 'right', "vertical-align": "middle", "margin-right": "10px", "margin-top": "5px"}),
+        html.Div(id="avg-target"+str(tooltip_id),
         style={"font-size":"20px","background-color":"rgb(244,245,249)","color":"rgb(104,110,119)",
                "border-radius":"5px","padding":"5px","width":"180px","text-align":"center",
-               "float":"right","vertical-align":"middle","margin-top":"5px","margin-right":"5px"}
-    )
+               "float":"right","vertical-align":"middle","margin-top":"5px","margin-right":"5px"}),
+    ])
 
     topPart = html.Div([
             avgSection,
-            html.Img(src=url, width=margin_left, height="60px",id="tooltip-target"+str(tooltip_id),
+            html.Img(src=url, width=margin_left, height="60px",
                      style={'float': 'left',"vertical-align": "middle"}),
-
             html.Div(CardTitle, className="card-title",
                      style={"margin-left": margin_left_text, "font-size": "2.5vw",
                             "font-weight": "bold","color":"rgb(104,110,119)","vertical-align": "middle"}),
@@ -446,32 +436,41 @@ def GenerateComingSoonGraphCard(CardTitle,width,graph,url,tooltip_id) :
     margin_left_text=str(width+10)+'px'
 
     topPart = html.Div([
-            html.Img(src=url, width=margin_left, height="60px",id="tooltip-target"+str(tooltip_id),
+        html.Img(src='https://i.ibb.co/WFmVbrn/info.png',
+                 width="40px", height="40px", id="tooltip-target" + str(tooltip_id),
+                 style={'float': 'right', "vertical-align": "middle", "margin-right": "10px", "margin-top": "5px"}),
+            html.Img(src=url, width=margin_left, height="60px",
                      style={'float': 'left',"vertical-align": "middle"}),
-
             html.Div(CardTitle, className="card-title",
                      style={"margin-left": margin_left_text, "font-size": "2.5vw",
                             "font-weight": "bold","color":"rgb(104,110,119)","vertical-align": "middle"}),
             dbc.Tooltip(tooltipText[tooltip_id],
-            target="tooltip-target"+str(tooltip_id),style={"font-size":"15px"}),
+            target="tooltip-target"+str(tooltip_id),style={"font-size":"15px"},boundaries_element="window"),
             ],style={'display':'inline-block;'})
 
     return dbc.Card(
         dbc.CardBody([topPart,
-                html.Div("Coming soon !",style={"font-size":"2.5vw","margin-top":"200px",
-                                              "margin-bottom":"200px","text-align":"center","color":"rgb(104,110,119)"}),
+                html.Div("Coming soon !",
+                         style={"font-size":"2.5vw","margin-top":"200px",
+                        "margin-bottom":"200px","text-align":"center","color":"rgb(104,110,119)"}),
             ],),
         style={"background-color": "white","border-radius":"10px","box-shadow":"0 0 6px 2px rgba(0,0,0,.1)"}
     )
 
 tooltipText=[]
-tooltipText.append("We compute the safety score by factoring in : face masks worn, average age, average weight and distance between people")
-tooltipText.append("A machine learning model estimates if a person is wearing a face mask or not")
-tooltipText.append("A machine learning model estimates the age of each individual people on screen")
-tooltipText.append("A model evaluates how close people are on screen")
-tooltipText.append("A model evaluates the fitness of each individual on screen")
+tooltipText.append("We compute a safety score by factoring in : face masks worn, "
+                   "average age, weight and distance between people")
+tooltipText.append("A machine learning model estimates if the people on screen are wearing a face mask")
+tooltipText.append("A machine learning model estimates the age of the people on screen."
+                   "Being young increases your chances of surviving a Covid infection")
+tooltipText.append("A model evaluates the proximity of people are on screen. "
+                   "Being close to each other augments the risks of contamination")
+tooltipText.append("A model evaluates the physical fitness of the people on screen. "
+                   "Being fit improves cardiorespiratory health, "
+                   "therefore increasing chances of surviving a Covid infection")
 tooltipText.append("A model evaluates the gender of each individual on screen")
-tooltipText.append("Choose your own parameters !")
+tooltipText.append("Choose your own parameters to draw graphs and find interesting results !")
+tooltipText.append("Using the data collected, we give tips for each camera site !")
 
 SafetyCard = GenerateComingSoonGraphCard("Safety index",52,SafetyIndexGraph,"https://i.ibb.co/Thh2kZh/safety.png",0)
 MasksCard = GenerateComingSoonGraphCard("Masks worn",90,Masks_Graph,"https://i.ibb.co/VSZBdtq/mask.png",1)
@@ -479,6 +478,7 @@ AgeCard = GenerateGraphCard("Population",60,Age_Graph,"https://i.ibb.co/pWXPvsk/
 ProximityCard = GenerateGraphCard("Proximity",75,Proximity_Graph,"https://i.ibb.co/CzVMDt5/distance.png",3)
 WeightCard = GenerateGraphCard("Fitness",60,Weight_Graph,"https://i.ibb.co/vPgJKc5/fitness.png",4)
 GenderCard = GenerateComingSoonGraphCard("Gender",60,Gender_Graph,"https://i.ibb.co/gmDNYkz/gender.png",5)
+InsightCard = GenerateComingSoonGraphCard("Insights",50,Gender_Graph,"https://i.ibb.co/wRnSLsq/brain.png",7)
 
 def GenerateDataLabCard(graph):
     Parameters = html.Div(
@@ -496,8 +496,7 @@ def GenerateDataLabCard(graph):
                             {'label': 'Gender', 'value': "Gender_B"},
                          ],
                          value="Population", style={"font-size": "15px","text-align":"left"}
-                         ), md=3
-                ),
+                         ), md=3),
             dbc.Col(html.Div("Y-axis"),md=1),
             dbc.Col(
                 dcc.Dropdown(id='LabDrop2',
@@ -510,8 +509,7 @@ def GenerateDataLabCard(graph):
                              {'label': 'Gender', 'value': "Gender_B"},
                          ],
                          value= "Proximity_B", style={"font-size": "15px","text-align":"left"}
-                         ),md=3
-            ),
+                         ),md=3),
             dbc.Col(html.Div("Palette"),md=1),
             dbc.Col(
                 dcc.Dropdown(id='LabDrop3',
@@ -524,8 +522,7 @@ def GenerateDataLabCard(graph):
                          ],
                          value=3, style={"font-size": "15px","text-align":"left"}
                          ),md=3)
-        ]
-        ),
+        ]),
         style={"font-size":"20px","background-color":"rgb(244,245,249)","color":"rgb(104,110,119)",
                "border-radius":"5px","padding":"5px","width":"80%","text-align":"center",
                "float":"right","vertical-align":"middle","margin-top":"5px","margin-right":"5px"}
@@ -563,13 +560,33 @@ DataLabCard = GenerateDataLabCard(DataLab_Graph)
 
 ContactCard = html.Div([
             html.Div([
-                html.Img(src="https://i.ibb.co/KNMqncx/Image3.png",width="100%",height="100px"),
-                html.Img(src="https://hitcounter.pythonanywhere.com/count/tag.svg?url=https%3A%2F%2Fnoptus.pythonanywhere.com%2F",
+    html.Img(src="https://i.ibb.co/KNMqncx/Image3.png",width="100%",height="100px"),
+    html.Img(src="https://hitcounter.pythonanywhere.com/count/tag.svg?url=https%3A%2F%2Fnoptus.pythonanywhere.com%2F",
                 alt="Hits", width=120, height=32,style={"position":"absolute","top":"16px","left":"25px"}),
                 html.H2("Tips, suggestions ? covidwatch@garageisep.com !",
                 style={"position":"absolute", "bottom": "8px","left": "20px","color":"white","font-size":"25px"}),
                 ],style={"float":"left","position":"relative","width":"100%","height":"100px"}),
             ],)
+
+SourcesCard = dbc.Card(
+        dbc.CardBody([
+            html.Img(src="https://i.ibb.co/XJnRZcX/sources.png", width="50px", height="50px",
+                     style={'float': 'left', "vertical-align": "middle",'margin-left':"5px"}),
+            html.Div("Our sources",style={"margin-left": "60px","font-size":"30px","font-weight":"bold"
+                                ,"vertical-align": "middle"}),
+            html.Br(),
+            html.Div([
+                html.A("> World health organisation",
+                       href='https://www.who.int/emergencies/diseases/novel-coronavirus-2019/question-and-answers-hub/q-a-detail/q-a-coronaviruses'),
+                html.Br(),
+                html.A("> Covid stats API", href='https://documenter.getpostman.com/view/10808728/SzS8rjbc?version=latest'),
+                html.Br(),
+                html.A("> Live camera footage", href='https://www.insecam.org/'),
+                html.Br(),
+            ],style={"margin-left":"10px"})
+        ]),style={"height":'100%',"background-color":'white',"box-shadow":"0 0 6px 2px rgba(0,0,0,.1)",
+                      "border-radius":"10px","font-size":"20px","color": "rgb(104,110,119)"}
+)
 
 map = html.Div(dcc.Graph(figure=worldMap(dfMap,active),id="worldMap"))
 mapCard = html.Div([
@@ -582,28 +599,34 @@ mapCard = html.Div([
     html.H1("Locations", className="card-title",
              style={"margin-left": "60px","padding-top":"15px",
                     "font-weight": "bold", "color": "rgb(104,110,119)", "vertical-align": "middle"}),
-    map
-],style={"height":'100%',"background-color":'white',
-                                   "box-shadow":"0 0 6px 2px rgba(0,0,0,.1)","border-radius":"10px"})
+    map],
+    style={"height":'100%',"background-color":'white',
+    "box-shadow":"0 0 6px 2px rgba(0,0,0,.1)","border-radius":"10px"})
 
-graphRow0 = dbc.Row([dbc.Col(id='card0', children=[MainCard], md=12)])
-graphRow1 = dbc.Row([dbc.Col(id='card1', children=[CountryStatsCard], md=3),
-                     dbc.Col(id='card2', children=[LiveVideoCard], md=5),
-                     dbc.Col(id='video2', children=[mapCard], md=4)],justify="around")
-graphRow2 = dbc.Row([dbc.Col(id='card3', children=[SafetyCard], md=6),
-                     dbc.Col(id='card4', children=[MasksCard], md=6)])
-graphRow3 = dbc.Row([dbc.Col(id='card5', children=[AgeCard], md=6),
-                     dbc.Col(id='card6', children=[ProximityCard], md=6)])
-graphRow4 = dbc.Row([dbc.Col(id='card7', children=[WeightCard], md=6),
-                     dbc.Col(id='card8', children=[GenderCard], md=6)])
+graphRow0 = dbc.Row([dbc.Col(children=[MainCard],           md=12)])
+graphRow1 = dbc.Row([dbc.Col(children=[CountryStatsCard],   md=3),
+                     dbc.Col(children=[LiveVideoCard],      md=5),
+                     dbc.Col(children=[mapCard],            md=4)],justify="around")
+graphRow2 = dbc.Row([dbc.Col(children=[SafetyCard],         md=6),
+                     dbc.Col(children=[InsightCard],        md=6)])
+graphRow3 = dbc.Row([dbc.Col(children=[MasksCard],          md=6),
+                     dbc.Col(children=[ProximityCard],      md=6)])
+graphRow4 = dbc.Row([dbc.Col(children=[AgeCard],            md=6),
+                     dbc.Col(children=[WeightCard],         md=6)])
+graphRow5 = dbc.Row([dbc.Col(children=[DataLabCard],        md=12)])
+graphRow6 = dbc.Row([dbc.Col(children=[SourcesCard],        md=12)])
+graphRow7 = dbc.Row([dbc.Col(children=[ContactCard],        md=12)])
 
-graphRow5 = dbc.Row([dbc.Col(id='card9', children=[DataLabCard], md=12)])
-
-graphRow6 = dbc.Row([dbc.Col(id='card10', children=[ContactCard], md=12)])
-
-Dashbody = html.Div([graphRow1,html.Br(),html.Br(),graphRow2,html.Br(),html.Br(),graphRow3,html.Br(),html.Br(),graphRow4,html.Br(),html.Br(),graphRow5,html.Br(),graphRow6,html.Br()],
-                    style={'margin-left':'20px','margin-right':'20px'})
-app.layout = html.Div([graphRow0,html.Br(),html.Br(),Dashbody,html.Br()],style={'backgroundColor':'rgb(244,245,249)'})
+Dashbody = html.Div([graphRow1,html.Br(),html.Br(),
+                     graphRow2,html.Br(),html.Br(),
+                     graphRow3,html.Br(),html.Br(),
+                     graphRow4,html.Br(),html.Br(),
+                     graphRow5,html.Br(),html.Br(),
+                     graphRow6,html.Br(),html.Br(),
+                     graphRow7,html.Br(),],
+                    style={'padding-left':'20px','padding-right':'20px'})
+app.layout = html.Div([graphRow0,html.Br(),html.Br(),Dashbody,html.Br()],
+                      style={'backgroundColor':'rgb(244,245,249)'})
 
 if __name__ == '__main__':
     app.run_server()
